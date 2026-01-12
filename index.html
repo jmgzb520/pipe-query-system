@@ -1218,18 +1218,30 @@ const downstreamModels = [
                     // 只有管理员才能看到管理面板和管理按钮
                     if (isAdmin) {
                         console.log('管理员登录 - 显示管理面板');
-                        adminPanel.classList.remove('hidden');
+                        // adminPanel可能不存在，添加空值检查
+                        if (adminPanel) {
+                            adminPanel.classList.remove('hidden');
+                        }
                         // 显示各个版面的管理按钮
-                        document.getElementById('adminButtonsMulti').classList.remove('hidden');
-                        document.getElementById('adminButtonsOneToOne').classList.remove('hidden');
-                        document.getElementById('adminButtonsDownstream').classList.remove('hidden');
+                        const adminButtonsMulti = document.getElementById('adminButtonsMulti');
+                        const adminButtonsOneToOne = document.getElementById('adminButtonsOneToOne');
+                        const adminButtonsDownstream = document.getElementById('adminButtonsDownstream');
+                        if (adminButtonsMulti) adminButtonsMulti.classList.remove('hidden');
+                        if (adminButtonsOneToOne) adminButtonsOneToOne.classList.remove('hidden');
+                        if (adminButtonsDownstream) adminButtonsDownstream.classList.remove('hidden');
                     } else {
                         console.log('普通用户登录 - 隐藏管理面板');
-                        adminPanel.classList.add('hidden');
+                        // adminPanel可能不存在，添加空值检查
+                        if (adminPanel) {
+                            adminPanel.classList.add('hidden');
+                        }
                         // 隐藏各个版面的管理按钮
-                        document.getElementById('adminButtonsMulti').classList.add('hidden');
-                        document.getElementById('adminButtonsOneToOne').classList.add('hidden');
-                        document.getElementById('adminButtonsDownstream').classList.add('hidden');
+                        const adminButtonsMulti = document.getElementById('adminButtonsMulti');
+                        const adminButtonsOneToOne = document.getElementById('adminButtonsOneToOne');
+                        const adminButtonsDownstream = document.getElementById('adminButtonsDownstream');
+                        if (adminButtonsMulti) adminButtonsMulti.classList.add('hidden');
+                        if (adminButtonsOneToOne) adminButtonsOneToOne.classList.add('hidden');
+                        if (adminButtonsDownstream) adminButtonsDownstream.classList.add('hidden');
                     }
                     // 启用查询功能
                     enableQueryFunctions();
@@ -1240,11 +1252,17 @@ const downstreamModels = [
 
                     loginBtn.classList.add('hidden');
                     logoutBtn.classList.add('hidden');
-                    adminPanel.classList.add('hidden');
+                    // adminPanel可能不存在，添加空值检查
+                    if (adminPanel) {
+                        adminPanel.classList.add('hidden');
+                    }
                     // 隐藏各个版面的管理按钮
-                    document.getElementById('adminButtonsMulti').classList.add('hidden');
-                    document.getElementById('adminButtonsOneToOne').classList.add('hidden');
-                    document.getElementById('adminButtonsDownstream').classList.add('hidden');
+                    const adminButtonsMulti = document.getElementById('adminButtonsMulti');
+                    const adminButtonsOneToOne = document.getElementById('adminButtonsOneToOne');
+                    const adminButtonsDownstream = document.getElementById('adminButtonsDownstream');
+                    if (adminButtonsMulti) adminButtonsMulti.classList.add('hidden');
+                    if (adminButtonsOneToOne) adminButtonsOneToOne.classList.add('hidden');
+                    if (adminButtonsDownstream) adminButtonsDownstream.classList.add('hidden');
                     // 禁用查询功能
                     disableQueryFunctions();
                 }

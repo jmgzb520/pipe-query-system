@@ -1,0 +1,2544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多品牌多联机管径查询系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        /* 自定义渐变背景 */
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-gradient {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50 py-8 px-4">
+    <!-- 登录提示容器（未登录时显示） -->
+    <div id="loginWelcome" class="min-h-screen flex items-center justify-center">
+        <div class="max-w-md w-full mx-4 text-center">
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                <div class="mb-6">
+                    <div class="text-6xl mb-4">🔒</div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">多品牌多联机管径查询系统</h1>
+                    <p class="text-gray-600">请先登录以使用管径查询功能</p>
+                </div>
+                <button onclick="document.getElementById('loginBtn').click()" class="w-full px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition font-medium">
+                    立即登录
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主页面容器（登录后显示） -->
+    <div id="mainContent" class="hidden max-w-6xl mx-auto">
+        <!-- 标题区域 -->
+        <div class="text-center mb-6 relative">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                多联机内机管径查询
+            </h1>
+            <p class="text-gray-600">
+                快速查询各品牌空调型号的管径规格信息
+            </p>
+            <button id="loginBtn" class="absolute right-0 top-0 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                登录
+            </button>
+            <button id="logoutBtn" class="hidden absolute right-0 top-0 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition">
+                登出
+            </button>
+        </div>
+
+        <!-- 标签页 -->
+        <div class="bg-white rounded-lg shadow mb-6">
+            <div class="flex border-b">
+                <button id="tabMulti" class="flex-1 py-3 px-4 text-center font-medium border-b-2 border-blue-500 text-blue-600 bg-blue-50">
+                    多联机内机
+                </button>
+                <button id="tabDownstream" class="flex-1 py-3 px-4 text-center font-medium border-b-2 border-transparent text-gray-600 hover:text-gray-800">
+                    多联机下游管径
+                </button>
+                <button id="tabOneToOne" class="flex-1 py-3 px-4 text-center font-medium border-b-2 border-transparent text-gray-600 hover:text-gray-800">
+                    一拖一
+                </button>
+            </div>
+        </div>
+
+        <!-- 多联机内机页面 -->
+        <div id="multiPage">
+
+        <!-- 查询表单 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6 relative">
+            <div class="absolute -top-3 -left-3 bg-blue-600 text-white text-xs px-3 py-1 rounded-md shadow-md font-bold tracking-wide">
+                国新机电gzb
+            </div>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        选择品牌
+                    </label>
+                    <select id="brandSelect" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">请选择品牌</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        选择冷量 (kW)
+                    </label>
+                    <select id="modelSelect" disabled class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
+                        <option value="">请选择冷量</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 登录提示 -->
+            <div id="loginTip1" class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md hidden">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl">🔒</span>
+                    <div>
+                        <p class="text-sm font-medium text-yellow-800">请先登录</p>
+                        <p class="text-xs text-yellow-600 mt-1">登录后即可使用查询功能</p>
+                    </div>
+                    <button onclick="document.getElementById('loginBtn').click()" class="ml-auto px-4 py-2 bg-yellow-600 text-white text-sm rounded-md hover:bg-yellow-700 transition">
+                        立即登录
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 查询结果 -->
+        <div id="resultContainer" class="hidden">
+            <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-lg p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                    <span class="text-3xl">📐</span>
+                    管径规格信息
+                </h2>
+                <div class="grid md:grid-cols-2 gap-4" id="pipeSpecs">
+                </div>
+                <!-- 设备选型说明 -->
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <p class="text-sm font-medium text-gray-700">选型设备</p>
+                            <p class="text-sm text-gray-500" id="deviceInfo">暂无设备信息</p>
+                        </div>
+                        <div class="space-y-2">
+                            <p class="text-sm font-medium text-gray-700">选择冷量</p>
+                            <p class="text-sm text-gray-500" id="capacityInfo">暂无冷量信息</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 无数据提示 -->
+        <div id="noDataMessage" class="hidden bg-white rounded-lg shadow p-12 text-center">
+            <p class="text-gray-500">暂无管径规格数据</p>
+        </div>
+
+        <!-- 管理功能按钮（仅管理员可见） -->
+        <div id="adminButtonsMulti" class="hidden mt-6">
+            <div class="bg-white rounded-lg shadow p-4">
+                <h3 class="text-lg font-semibold mb-4 text-gray-800">数据管理</h3>
+                <div class="flex gap-4">
+                    <button id="exportMultiBtn" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">
+                        📤 导出数据
+                    </button>
+                    <button id="importMultiBtn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                        📥 导入数据
+                    </button>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <!-- 多联机下游管径页面 -->
+        <div id="downstreamPage" class="hidden">
+            <!-- 查询表单 -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6 relative">
+                <div class="absolute -top-3 -left-3 bg-purple-600 text-white text-xs px-3 py-1 rounded-md shadow-md font-bold tracking-wide">
+                    国新机电gzb
+                </div>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            选择品牌
+                        </label>
+                        <select id="brandSelect3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option value="">请选择品牌</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            冷量计算结果 (kW)
+                        </label>
+                        <input type="text" id="totalCapacity3" readonly class="w-full px-3 py-2 border border-gray-300 rounded-md bg-purple-50 text-purple-700 font-bold focus:outline-none" placeholder="自动计算" value="0">
+                    </div>
+                </div>
+
+                <!-- 室内机冷量输入区域 -->
+                <div class="mt-6">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="text-sm font-medium text-gray-700">
+                            室内机冷量输入 (kW)
+                        </label>
+                        <button id="clearAllBtn3" class="text-sm text-gray-500 hover:text-gray-700 transition">
+                            清空所有
+                        </button>
+                    </div>
+                    <!-- 红色框容器：固定高度，可滚动 -->
+                    <div class="border-2 border-red-500 rounded-lg p-4 bg-red-50 overflow-y-auto" style="max-height: 200px;" id="indoorUnitsScrollContainer">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3" id="indoorUnitsContainer">
+                            <!-- 室内机输入框将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 登录提示 -->
+                <div id="loginTip3" class="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-md hidden">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">🔒</span>
+                        <div>
+                            <p class="text-sm font-medium text-purple-800">请先登录</p>
+                            <p class="text-xs text-purple-600 mt-1">登录后即可使用查询功能</p>
+                        </div>
+                        <button onclick="document.getElementById('loginBtn').click()" class="ml-auto px-4 py-2 bg-purple-600 text-white text-sm rounded-md hover:bg-purple-700 transition">
+                            立即登录
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 查询结果 -->
+            <div id="resultContainer3" class="hidden">
+                <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-lg p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                        <span class="text-3xl">📐</span>
+                        管径规格信息
+                    </h2>
+                    <div class="grid md:grid-cols-2 gap-4" id="pipeSpecs3">
+                    </div>
+                    <!-- 设备选型说明 -->
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <p class="text-sm font-medium text-gray-700">选型设备</p>
+                                <p class="text-sm text-gray-500" id="deviceInfo3">暂无设备信息</p>
+                            </div>
+                            <div class="space-y-2">
+                                <p class="text-sm font-medium text-gray-700">选择冷量</p>
+                                <p class="text-sm text-gray-500" id="capacityInfo3">暂无冷量信息</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 无数据提示 -->
+            <div id="noDataMessage3" class="hidden bg-white rounded-lg shadow p-12 text-center">
+                <p class="text-gray-500">暂无管径规格数据</p>
+            </div>
+
+            <!-- 管理功能按钮（仅管理员可见） -->
+            <div id="adminButtonsDownstream" class="hidden mt-6">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-800">数据管理</h3>
+                    <div class="flex gap-4">
+                        <button id="exportDownstreamBtn" class="px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition">
+                            📤 导出数据
+                        </button>
+                        <button id="importDownstreamBtn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                            📥 导入数据
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 一拖一页面 -->
+        <div id="oneToOnePage" class="hidden">
+            <!-- 查询表单 -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6 relative">
+                <div class="absolute -top-3 -left-3 bg-green-600 text-white text-xs px-3 py-1 rounded-md shadow-md font-bold tracking-wide">
+                    国新机电gzb
+                </div>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            选择品牌
+                        </label>
+                        <select id="brandSelect2" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">请选择品牌</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            选择冷量 (kW)
+                        </label>
+                        <select id="modelSelect2" disabled class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
+                            <option value="">请选择冷量</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 登录提示 -->
+                <div id="loginTip2" class="mt-4 p-4 bg-green-50 border border-green-200 rounded-md hidden">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">🔒</span>
+                        <div>
+                            <p class="text-sm font-medium text-green-800">请先登录</p>
+                            <p class="text-xs text-green-600 mt-1">登录后即可使用查询功能</p>
+                        </div>
+                        <button onclick="document.getElementById('loginBtn').click()" class="ml-auto px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition">
+                            立即登录
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 查询结果 -->
+            <div id="resultContainer2" class="hidden">
+                <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-lg p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                        <span class="text-3xl">📐</span>
+                        管径规格信息
+                    </h2>
+                    <div class="grid md:grid-cols-2 gap-4" id="pipeSpecs2">
+                    </div>
+                    <!-- 设备选型说明 -->
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <p class="text-sm font-medium text-gray-700">选型设备</p>
+                                <p class="text-sm text-gray-500" id="deviceInfo2">暂无设备信息</p>
+                            </div>
+                            <div class="space-y-2">
+                                <p class="text-sm font-medium text-gray-700">选择冷量</p>
+                                <p class="text-sm text-gray-500" id="capacityInfo2">暂无冷量信息</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 无数据提示 -->
+            <div id="noDataMessage2" class="hidden bg-white rounded-lg shadow p-12 text-center">
+                <p class="text-gray-500">暂无管径规格数据</p>
+            </div>
+
+            <!-- 管理功能按钮（仅管理员可见） -->
+            <div id="adminButtonsOneToOne" class="hidden mt-6">
+                <div class="bg-white rounded-lg shadow p-4">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-800">数据管理</h3>
+                    <div class="flex gap-4">
+                        <button id="exportOneToOneBtn" class="px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition">
+                            📤 导出数据
+                        </button>
+                        <button id="importOneToOneBtn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                            📥 导入数据
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        </div>
+
+        <!-- 登录模态框 -->
+        <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">用户登录</h2>
+                <p class="text-sm text-gray-600 mb-6">请先登录以使用管径查询功能</p>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">用户名</label>
+                    <input type="text" id="username" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="请输入用户名">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">密码</label>
+                    <input type="password" id="password" class="w-full px-3 py-2 border border-gray-300 rounded-md" placeholder="请输入密码">
+                </div>
+                <div class="mb-6">
+                    <label class="flex items-center">
+                        <input type="checkbox" id="rememberMe" checked class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                        <span class="ml-2 text-sm text-gray-700">记住登录状态</span>
+                    </label>
+                </div>
+                <div>
+                    <button id="loginSubmitBtn" class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                        登录
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 多联机内机导入模态框 -->
+        <div id="importModalMulti" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-8 max-w-2xl w-full mx-4">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">导入多联机内机数据</h2>
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <p class="text-sm text-blue-800 font-medium mb-2">💡 Excel文件格式说明：</p>
+                    <p class="text-xs text-blue-700">
+                        每个型号一行，列名：品牌、设备冷量、气管、液管
+                    </p>
+                    <p class="text-xs text-blue-700 mt-1">
+                        例如：海信/日立 | 1.5 | Φ12.7 | Φ6.3
+                    </p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">选择Excel文件</label>
+                    <input type="file" id="importMultiFile2" accept=".xlsx,.xls" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                </div>
+                <div class="flex gap-4">
+                    <button id="importMultiSubmitBtn" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                        开始导入
+                    </button>
+                    <button id="importMultiCancelBtn" class="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition">
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 一拖一导入模态框 -->
+        <div id="importModalOneToOne" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-8 max-w-2xl w-full mx-4">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">导入一拖一数据</h2>
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                    <p class="text-sm text-green-800 font-medium mb-2">💡 Excel文件格式说明：</p>
+                    <p class="text-xs text-green-700">
+                        每个型号一行，列名：品牌、设备冷量、气管、液管
+                    </p>
+                    <p class="text-xs text-green-700 mt-1">
+                        例如：海信/日立 | 1.5 | Φ9.5 | Φ6.3
+                    </p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">选择Excel文件</label>
+                    <input type="file" id="importOneToOneFile2" accept=".xlsx,.xls" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                </div>
+                <div class="flex gap-4">
+                    <button id="importOneToOneSubmitBtn" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">
+                        开始导入
+                    </button>
+                    <button id="importOneToOneCancelBtn" class="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition">
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 多联机下游管径导入模态框 -->
+        <div id="importModalDownstream" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-lg p-8 max-w-2xl w-full mx-4">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">导入多联机下游管径数据</h2>
+                <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+                    <p class="text-sm text-purple-800 font-medium mb-2">💡 Excel文件格式说明：</p>
+                    <p class="text-xs text-purple-700">
+                        每个型号一行，列名：品牌、设备冷量、气管、液管、分歧管
+                    </p>
+                    <p class="text-xs text-purple-700 mt-1">
+                        例如：海信/日立 | A≤16.8 | 15.9mm | 9.5mm | FQZHN-01C
+                    </p>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">选择Excel文件</label>
+                    <input type="file" id="importDownstreamFile2" accept=".xlsx,.xls" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                </div>
+                <div class="flex gap-4">
+                    <button id="importDownstreamSubmitBtn" class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition">
+                        开始导入
+                    </button>
+                    <button id="importDownstreamCancelBtn" class="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition">
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局错误捕获
+        window.onerror = function(message, source, lineno, colno, error) {
+            console.error('全局错误:', message, 'at', source, lineno, ':', colno);
+            console.error('错误对象:', error);
+        };
+
+        // 等待DOM加载完成
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== DOM加载完成，开始初始化 ===');
+
+            // ============ 数据存储（移到前面以确保在使用前已定义）============
+            const brands = [
+            { id: 1, name: "海信/日立" },
+            { id: 2, name: "美的" },
+            { id: 3, name: "三菱重工" },
+            { id: 4, name: "三菱重工海尔" },
+            { id: 5, name: "格力" },
+            { id: 6, name: "大金" },
+        ];
+
+        const models = [
+            { id: 1, brandId: 1, modelName: "1.5", capacity: "1.5 kW" },
+            { id: 2, brandId: 1, modelName: "1.8", capacity: "1.8 kW" },
+            { id: 3, brandId: 1, modelName: "2.2", capacity: "2.2 kW" },
+            { id: 4, brandId: 1, modelName: "2.5", capacity: "2.5 kW" },
+            { id: 5, brandId: 1, modelName: "2.8", capacity: "2.8 kW" },
+            { id: 6, brandId: 1, modelName: "3.2", capacity: "3.2 kW" },
+            { id: 7, brandId: 1, modelName: "3.6", capacity: "3.6 kW" },
+            { id: 8, brandId: 1, modelName: "4", capacity: "4 kW" },
+            { id: 9, brandId: 1, modelName: "4.5", capacity: "4.5 kW" },
+            { id: 10, brandId: 1, modelName: "5", capacity: "5 kW" },
+            { id: 11, brandId: 1, modelName: "5.6", capacity: "5.6 kW" },
+            { id: 12, brandId: 1, modelName: "6.3", capacity: "6.3 kW" },
+            { id: 13, brandId: 1, modelName: "7.1", capacity: "7.1 kW" },
+            { id: 14, brandId: 1, modelName: "8", capacity: "8 kW" },
+            { id: 15, brandId: 1, modelName: "9", capacity: "9 kW" },
+            { id: 16, brandId: 1, modelName: "10", capacity: "10 kW" },
+            { id: 17, brandId: 1, modelName: "11.2", capacity: "11.2 kW" },
+            { id: 18, brandId: 1, modelName: "12.5", capacity: "12.5 kW" },
+            { id: 19, brandId: 1, modelName: "14", capacity: "14 kW" },
+            { id: 20, brandId: 1, modelName: "16", capacity: "16 kW" },
+            { id: 21, brandId: 2, modelName: "1.5", capacity: "1.5 kW" },
+            { id: 22, brandId: 2, modelName: "1.8", capacity: "1.8 kW" },
+            { id: 23, brandId: 2, modelName: "2.2", capacity: "2.2 kW" },
+            { id: 24, brandId: 2, modelName: "2.5", capacity: "2.5 kW" },
+            { id: 25, brandId: 2, modelName: "2.8", capacity: "2.8 kW" },
+            { id: 26, brandId: 2, modelName: "3.2", capacity: "3.2 kW" },
+            { id: 27, brandId: 2, modelName: "3.6", capacity: "3.6 kW" },
+            { id: 28, brandId: 2, modelName: "4", capacity: "4 kW" },
+            { id: 29, brandId: 2, modelName: "4.5", capacity: "4.5 kW" },
+            { id: 30, brandId: 2, modelName: "5", capacity: "5 kW" },
+            { id: 31, brandId: 2, modelName: "5.6", capacity: "5.6 kW" },
+            { id: 32, brandId: 2, modelName: "6.3", capacity: "6.3 kW" },
+            { id: 33, brandId: 2, modelName: "7.1", capacity: "7.1 kW" },
+            { id: 34, brandId: 2, modelName: "8", capacity: "8 kW" },
+            { id: 35, brandId: 2, modelName: "9", capacity: "9 kW" },
+            { id: 36, brandId: 2, modelName: "10", capacity: "10 kW" },
+            { id: 37, brandId: 2, modelName: "11.2", capacity: "11.2 kW" },
+            { id: 38, brandId: 2, modelName: "12.5", capacity: "12.5 kW" },
+            { id: 39, brandId: 2, modelName: "14", capacity: "14 kW" },
+            { id: 40, brandId: 2, modelName: "16", capacity: "16 kW" },
+            { id: 41, brandId: 3, modelName: "1.8", capacity: "1.8 kW" },
+            { id: 42, brandId: 3, modelName: "2.2", capacity: "2.2 kW" },
+            { id: 43, brandId: 3, modelName: "2.5", capacity: "2.5 kW" },
+            { id: 44, brandId: 3, modelName: "2.8", capacity: "2.8 kW" },
+            { id: 45, brandId: 3, modelName: "3.2", capacity: "3.2 kW" },
+            { id: 46, brandId: 3, modelName: "3.6", capacity: "3.6 kW" },
+            { id: 47, brandId: 3, modelName: "4", capacity: "4 kW" },
+            { id: 48, brandId: 3, modelName: "4.5", capacity: "4.5 kW" },
+            { id: 49, brandId: 3, modelName: "5", capacity: "5 kW" },
+            { id: 50, brandId: 3, modelName: "5.6", capacity: "5.6 kW" },
+            { id: 51, brandId: 3, modelName: "6.3", capacity: "6.3 kW" },
+            { id: 52, brandId: 3, modelName: "7.1", capacity: "7.1 kW" },
+            { id: 53, brandId: 3, modelName: "8", capacity: "8 kW" },
+            { id: 54, brandId: 3, modelName: "9", capacity: "9 kW" },
+            { id: 55, brandId: 3, modelName: "10", capacity: "10 kW" },
+            { id: 56, brandId: 3, modelName: "11.2", capacity: "11.2 kW" },
+            { id: 57, brandId: 3, modelName: "12", capacity: "12 kW" },
+            { id: 58, brandId: 3, modelName: "16", capacity: "16 kW" },
+            { id: 59, brandId: 4, modelName: "1.8", capacity: "1.8 kW" },
+            { id: 60, brandId: 4, modelName: "2.2", capacity: "2.2 kW" },
+            { id: 61, brandId: 4, modelName: "2.5", capacity: "2.5 kW" },
+            { id: 62, brandId: 4, modelName: "2.8", capacity: "2.8 kW" },
+            { id: 63, brandId: 4, modelName: "3.2", capacity: "3.2 kW" },
+            { id: 64, brandId: 4, modelName: "3.6", capacity: "3.6 kW" },
+            { id: 65, brandId: 4, modelName: "4", capacity: "4 kW" },
+            { id: 66, brandId: 4, modelName: "4.5", capacity: "4.5 kW" },
+            { id: 67, brandId: 4, modelName: "5", capacity: "5 kW" },
+            { id: 68, brandId: 4, modelName: "5.6", capacity: "5.6 kW" },
+            { id: 69, brandId: 4, modelName: "6.3", capacity: "6.3 kW" },
+            { id: 70, brandId: 4, modelName: "7.1", capacity: "7.1 kW" },
+            { id: 71, brandId: 4, modelName: "8", capacity: "8 kW" },
+            { id: 72, brandId: 4, modelName: "9", capacity: "9 kW" },
+            { id: 73, brandId: 4, modelName: "10", capacity: "10 kW" },
+            { id: 74, brandId: 4, modelName: "11.2", capacity: "11.2 kW" },
+            { id: 75, brandId: 4, modelName: "12", capacity: "12 kW" },
+            { id: 76, brandId: 4, modelName: "16", capacity: "16 kW" },
+            { id: 77, brandId: 5, modelName: "2.2", capacity: "2.2 kW" },
+            { id: 78, brandId: 5, modelName: "2.5", capacity: "2.5 kW" },
+            { id: 79, brandId: 5, modelName: "2.8", capacity: "2.8 kW" },
+            { id: 80, brandId: 5, modelName: "3.2", capacity: "3.2 kW" },
+            { id: 81, brandId: 5, modelName: "3.6", capacity: "3.6 kW" },
+            { id: 82, brandId: 5, modelName: "4", capacity: "4 kW" },
+            { id: 83, brandId: 5, modelName: "4.5", capacity: "4.5 kW" },
+            { id: 84, brandId: 5, modelName: "5", capacity: "5 kW" },
+            { id: 85, brandId: 5, modelName: "5.6", capacity: "5.6 kW" },
+            { id: 86, brandId: 5, modelName: "6.3", capacity: "6.3 kW" },
+            { id: 87, brandId: 5, modelName: "7.1", capacity: "7.1 kW" },
+            { id: 88, brandId: 5, modelName: "8", capacity: "8 kW" },
+            { id: 90, brandId: 5, modelName: "9", capacity: "9 kW" },
+            { id: 91, brandId: 5, modelName: "10", capacity: "10 kW" },
+            { id: 92, brandId: 5, modelName: "11.2", capacity: "11.2 kW" },
+            { id: 93, brandId: 5, modelName: "12", capacity: "12 kW" },
+            { id: 94, brandId: 5, modelName: "16", capacity: "16 kW" },
+            { id: 95, brandId: 6, modelName: "1.5", capacity: "1.5 kW" },
+            { id: 96, brandId: 6, modelName: "1.8", capacity: "1.8 kW" },
+            { id: 97, brandId: 6, modelName: "2.2", capacity: "2.2 kW" },
+            { id: 98, brandId: 6, modelName: "2.5", capacity: "2.5 kW" },
+            { id: 99, brandId: 6, modelName: "2.8", capacity: "2.8 kW" },
+            { id: 100, brandId: 6, modelName: "3.2", capacity: "3.2 kW" },
+            { id: 101, brandId: 6, modelName: "3.6", capacity: "3.6 kW" },
+            { id: 102, brandId: 6, modelName: "4", capacity: "4 kW" },
+            { id: 103, brandId: 6, modelName: "4.5", capacity: "4.5 kW" },
+            { id: 104, brandId: 6, modelName: "5", capacity: "5 kW" },
+            { id: 105, brandId: 6, modelName: "5.6", capacity: "5.6 kW" },
+            { id: 106, brandId: 6, modelName: "6.3", capacity: "6.3 kW" },
+            { id: 107, brandId: 6, modelName: "7.1", capacity: "7.1 kW" },
+            { id: 108, brandId: 6, modelName: "8", capacity: "8 kW" },
+            { id: 109, brandId: 6, modelName: "9", capacity: "9 kW" },
+            { id: 110, brandId: 6, modelName: "10", capacity: "10 kW" },
+            { id: 111, brandId: 6, modelName: "11.2", capacity: "11.2 kW" },
+            { id: 112, brandId: 6, modelName: "12.5", capacity: "12.5 kW" },
+            { id: 113, brandId: 6, modelName: "14", capacity: "14 kW" },
+            { id: 114, brandId: 6, modelName: "16", capacity: "16 kW" },
+        ];
+
+        const pipeSpecs = [
+            { modelId: 1, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 1, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 2, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 2, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 3, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 3, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 4, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 4, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 5, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 5, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 6, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 6, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 7, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 7, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 8, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 8, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 9, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 9, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 10, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 10, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 11, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 11, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 12, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 12, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 13, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 13, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 14, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 14, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 15, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 15, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 16, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 16, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 17, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 17, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 18, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 18, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 19, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 19, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 20, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 20, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 21, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 21, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 22, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 22, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 23, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 23, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 24, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 24, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 25, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 25, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 26, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 26, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 27, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 27, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 28, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 28, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 29, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 29, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 30, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 30, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 31, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 31, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 32, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 32, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 33, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 33, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 34, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 34, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 35, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 35, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 36, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 36, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 37, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 37, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 38, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 38, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 39, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 39, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 40, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 40, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 41, pipeType: "气管", pipeSize: "Φ9.52" },
+            { modelId: 41, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 42, pipeType: "气管", pipeSize: "Φ9.52" },
+            { modelId: 42, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 43, pipeType: "气管", pipeSize: "Φ9.52" },
+            { modelId: 43, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 44, pipeType: "气管", pipeSize: "Φ9.52" },
+            { modelId: 44, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 45, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 45, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 46, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 46, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 47, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 47, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 48, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 48, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 49, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 49, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 50, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 50, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 51, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 51, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 52, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 52, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 53, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 53, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 54, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 54, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 55, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 55, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 56, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 56, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 57, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 57, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 58, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 58, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 59, pipeType: "气管", pipeSize: "Φ9.52" },
+            { modelId: 59, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 60, pipeType: "气管", pipeSize: "Φ9.52" },
+            { modelId: 60, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 61, pipeType: "气管", pipeSize: "Φ9.52" },
+            { modelId: 61, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 62, pipeType: "气管", pipeSize: "Φ9.52" },
+            { modelId: 62, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 63, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 63, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 64, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 64, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 65, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 65, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 66, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 66, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 67, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 67, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 68, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 68, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 69, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 69, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 70, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 70, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 71, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 71, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 72, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 72, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 73, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 73, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 74, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 74, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 75, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 75, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 76, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 76, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 77, pipeType: "气管", pipeSize: "Φ9.52" },
+            { modelId: 77, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 78, pipeType: "气管", pipeSize: "Φ9.52" },
+            { modelId: 78, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 79, pipeType: "气管", pipeSize: "Φ9.52" },
+            { modelId: 79, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 80, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 80, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 81, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 81, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 82, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 82, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 83, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 83, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 84, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 84, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 85, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 85, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 86, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 86, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 87, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 87, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 88, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 88, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 90, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 90, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 91, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 91, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 92, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 92, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 93, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 93, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 94, pipeType: "气管", pipeSize: "Φ19.05" },
+            { modelId: 94, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 95, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 95, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 96, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 96, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 97, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 97, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 98, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 98, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 99, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 99, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 100, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 100, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 101, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 101, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 102, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 102, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 103, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 103, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 104, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 104, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 105, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 105, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 106, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 106, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 107, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 107, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 108, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 108, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 109, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 109, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 110, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 110, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 111, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 111, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 112, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 112, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 113, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 113, pipeType: "液管", pipeSize: "Φ9.5" },
+            { modelId: 114, pipeType: "气管", pipeSize: "Φ15.9" },
+            { modelId: 114, pipeType: "液管", pipeSize: "Φ9.5" },
+        ];
+
+        // 一拖一版面独立数据
+        const oneToOneModels = [
+            { id: 1001, brandId: 1, modelName: "1.5", capacity: "1.5 HP" },
+            { id: 1002, brandId: 1, modelName: "2.0", capacity: "2.0 HP" },
+            { id: 1003, brandId: 1, modelName: "2.5", capacity: "2.5 HP" },
+            { id: 1004, brandId: 4, modelName: "1.5", capacity: "1.5 HP" },
+            { id: 1005, brandId: 4, modelName: "2.0", capacity: "2.0 HP" },
+            { id: 1006, brandId: 4, modelName: "2.5", capacity: "2.5 HP" },
+            { id: 1007, brandId: 5, modelName: "1.5", capacity: "1.5 HP" },
+            { id: 1008, brandId: 5, modelName: "2.0", capacity: "2.0 HP" },
+            { id: 1009, brandId: 5, modelName: "2.5", capacity: "2.5 HP" }
+        ];
+
+        const oneToOnePipeSpecs = [
+            { modelId: 1001, pipeType: "气管", pipeSize: "Φ9.5" },
+            { modelId: 1001, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 1002, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 1002, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 1003, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 1003, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 1004, pipeType: "气管", pipeSize: "Φ9.5" },
+            { modelId: 1004, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 1005, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 1005, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 1006, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 1006, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 1007, pipeType: "气管", pipeSize: "Φ9.5" },
+            { modelId: 1007, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 1008, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 1008, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 1009, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 1009, pipeType: "液管", pipeSize: "Φ6.3" }
+        ];
+
+        // 多联机下游管径版面独立数据
+const downstreamModels = [
+            { id: 1, brandId: 2, modelName: "A≤16.8", capacity: "A≤16.8 kW" },
+            { id: 2, brandId: 2, modelName: "16.8≤A<22.4", capacity: "16.8≤A<22.4 kW" },
+            { id: 3, brandId: 2, modelName: "22.4≤A<33.0", capacity: "22.4≤A<33.0 kW" },
+            { id: 4, brandId: 2, modelName: "33.0≤A<47.0", capacity: "33.0≤A<47.0 kW" },
+            { id: 5, brandId: 2, modelName: "47.0≤A<71.0", capacity: "47.0≤A<71.0 kW" },
+            { id: 6, brandId: 2, modelName: "71.0≤A<1040", capacity: "71.0≤A<1040 kW" },
+            { id: 7, brandId: 2, modelName: "104.0≤A<154.0", capacity: "104.0≤A<154.0 kW" },
+            { id: 8, brandId: 2, modelName: "154.0≤A<190.0", capacity: "154.0≤A<190.0 kW" },
+            { id: 9, brandId: 2, modelName: "190.0≤A<235.0", capacity: "190.0≤A<235.0 kW" },
+            { id: 10, brandId: 2, modelName: "235.0≤A<250.0", capacity: "235.0≤A<250.0 kW" },
+            { id: 11, brandId: 2, modelName: "250.0≤A<302.4", capacity: "250.0≤A<302.4 kW" },
+            { id: 12, brandId: 2, modelName: "302.4≤A", capacity: "302.4≤A kW" },
+            { id: 13, brandId: 1, modelName: "A<16.8", capacity: "A<16.8 kW" },
+            { id: 14, brandId: 1, modelName: "16.8≤A<25.2", capacity: "16.8≤A<25.2 kW" },
+            { id: 15, brandId: 1, modelName: "25.2≤A<33.5", capacity: "25.2≤A<33.5 kW" },
+            { id: 16, brandId: 1, modelName: "33.5≤A<45.0", capacity: "33.5≤A<45.0 kW" },
+            { id: 17, brandId: 1, modelName: "45.0≤A<50.4", capacity: "45.0≤A<50.4 kW" },
+            { id: 18, brandId: 1, modelName: "50.4≤A<72.8", capacity: "50.4≤A<72.8 kW" },
+            { id: 19, brandId: 1, modelName: "72.8≤A<100.8", capacity: "72.8≤A<100.8 kW" },
+            { id: 20, brandId: 1, modelName: "100.8≤A<134.4", capacity: "100.8≤A<134.4 kW" },
+            { id: 21, brandId: 1, modelName: "134.4≤A<162.4", capacity: "134.4≤A<162.4 kW" },
+            { id: 22, brandId: 1, modelName: "162.4≤A<235.2", capacity: "162.4≤A<235.2 kW" },
+            { id: 23, brandId: 1, modelName: "235.2≤A<313.6", capacity: "235.2≤A<313.6 kW" },
+            { id: 24, brandId: 1, modelName: "313.6≤A<403.2", capacity: "313.6≤A<403.2 kW" },
+            { id: 25, brandId: 1, modelName: "A<16", capacity: "A<16 kW" },
+            { id: 26, brandId: 1, modelName: "16≤A<25", capacity: "16≤A<25 kW" },
+            { id: 27, brandId: 1, modelName: "25≤A<33.5", capacity: "25≤A<33.5 kW" },
+            { id: 28, brandId: 1, modelName: "33.5≤A<45", capacity: "33.5≤A<45 kW" },
+            { id: 29, brandId: 1, modelName: "45≤A<50.4", capacity: "45≤A<50.4 kW" },
+            { id: 30, brandId: 1, modelName: "50.4≤A<72.9", capacity: "50.4≤A<72.9 kW" },
+            { id: 31, brandId: 1, modelName: "72.9≤A<100.8", capacity: "72.9≤A<100.8 kW" },
+            { id: 32, brandId: 1, modelName: "100.8≤A<156.8", capacity: "100.8≤A<156.8 kW" },
+            { id: 33, brandId: 1, modelName: "156.8≤A<190.4", capacity: "156.8≤A<190.4 kW" },
+            { id: 34, brandId: 1, modelName: "190.4≤A<207.2", capacity: "190.4≤A<207.2 kW" },
+            { id: 35, brandId: 1, modelName: "207.2≤A<252", capacity: "207.2≤A<252 kW" },
+            { id: 36, brandId: 1, modelName: "252≤A", capacity: "252≤A kW" },
+            { id: 37, brandId: 3, modelName: "7.0未满", capacity: "7.0未满 kW" },
+            { id: 38, brandId: 3, modelName: "7.0以上~18.0未满", capacity: "7.0以上~18.0未满 kW" },
+            { id: 39, brandId: 3, modelName: "18.0以上~37.1未满", capacity: "18.0以上~37.1未满 kW" },
+            { id: 40, brandId: 3, modelName: "37.1以上~54.0未满", capacity: "37.1以上~54.0未满 kW" },
+            { id: 41, brandId: 3, modelName: "54.0以上~70.0未满", capacity: "54.0以上~70.0未满 kW" },
+            { id: 42, brandId: 3, modelName: "70.0以上~110.0未满", capacity: "70.0以上~110.0未满 kW" },
+            { id: 43, brandId: 3, modelName: "110.0以上~156.0未满", capacity: "110.0以上~156.0未满 kW" },
+            { id: 44, brandId: 3, modelName: "156.0以上~186.0未满", capacity: "156.0以上~186.0未满 kW" },
+            { id: 45, brandId: 3, modelName: "186.0以上~220.5", capacity: "186.0以上~220.5 kW" },
+            { id: 46, brandId: 6, modelName: "＜16.8KW", capacity: "＜16.8KW kW" },
+            { id: 47, brandId: 6, modelName: "16.8≤X＜22.4KW", capacity: "16.8≤X＜22.4KW kW" },
+            { id: 48, brandId: 6, modelName: "22.4≤X＜33.0KW", capacity: "22.4≤X＜33.0KW kW" },
+            { id: 49, brandId: 6, modelName: "33.0≤X＜47.0KW", capacity: "33.0≤X＜47.0KW kW" }
+        ];
+
+        const downstreamPipeSpecs = [
+            { modelId: 1, pipeType: "气管", pipeSize: "15.9mm" },
+            { modelId: 1, pipeType: "液管", pipeSize: "9.5mm" },
+            { modelId: 1, pipeType: "分歧管", pipeSize: "FQZHN - 01C" },
+            { modelId: 2, pipeType: "气管", pipeSize: "19.1mm" },
+            { modelId: 2, pipeType: "液管", pipeSize: "9.5mm" },
+            { modelId: 2, pipeType: "分歧管", pipeSize: "FQZHN - 01C" },
+            { modelId: 3, pipeType: "气管", pipeSize: "22.2mm" },
+            { modelId: 3, pipeType: "液管", pipeSize: "9.5mm" },
+            { modelId: 3, pipeType: "分歧管", pipeSize: "FQZHN - 02C" },
+            { modelId: 4, pipeType: "气管", pipeSize: "28.6mm" },
+            { modelId: 4, pipeType: "液管", pipeSize: "12.7mm" },
+            { modelId: 4, pipeType: "分歧管", pipeSize: "FQZHN - 03C" },
+            { modelId: 5, pipeType: "气管", pipeSize: "28.6mm" },
+            { modelId: 5, pipeType: "液管", pipeSize: "15.9mm" },
+            { modelId: 5, pipeType: "分歧管", pipeSize: "FQZHN - 03C" },
+            { modelId: 6, pipeType: "气管", pipeSize: "31.8mm" },
+            { modelId: 6, pipeType: "液管", pipeSize: "19.1mm" },
+            { modelId: 6, pipeType: "分歧管", pipeSize: "FQZHN - 03C" },
+            { modelId: 7, pipeType: "气管", pipeSize: "38.1mm" },
+            { modelId: 7, pipeType: "液管", pipeSize: "19.1mm" },
+            { modelId: 7, pipeType: "分歧管", pipeSize: "FQZHN - 04C" },
+            { modelId: 8, pipeType: "气管", pipeSize: "41.3mm" },
+            { modelId: 8, pipeType: "液管", pipeSize: "19.1mm" },
+            { modelId: 8, pipeType: "分歧管", pipeSize: "FQZHN - 05C" },
+            { modelId: 9, pipeType: "气管", pipeSize: "44.5mm" },
+            { modelId: 9, pipeType: "液管", pipeSize: "22.2mm" },
+            { modelId: 9, pipeType: "分歧管", pipeSize: "FQZHN - 05C" },
+            { modelId: 10, pipeType: "气管", pipeSize: "50.8mm" },
+            { modelId: 10, pipeType: "液管", pipeSize: "22.2mm" },
+            { modelId: 10, pipeType: "分歧管", pipeSize: "FQZHN - 06C" },
+            { modelId: 11, pipeType: "气管", pipeSize: "50.8mm" },
+            { modelId: 11, pipeType: "液管", pipeSize: "25.4mm" },
+            { modelId: 11, pipeType: "分歧管", pipeSize: "FQZHN - 06C" },
+            { modelId: 12, pipeType: "气管", pipeSize: "54mm" },
+            { modelId: 12, pipeType: "液管", pipeSize: "28.6mm" },
+            { modelId: 12, pipeType: "分歧管", pipeSize: "FQZHN - 07C" },
+            { modelId: 13, pipeType: "气管", pipeSize: "15.88mm" },
+            { modelId: 13, pipeType: "液管", pipeSize: "9.53mm" },
+            { modelId: 13, pipeType: "分歧管", pipeSize: "HFQ - 102F" },
+            { modelId: 14, pipeType: "气管", pipeSize: "19.05mm" },
+            { modelId: 14, pipeType: "液管", pipeSize: "9.53mm" },
+            { modelId: 14, pipeType: "分歧管", pipeSize: "HFQ - 102F" },
+            { modelId: 15, pipeType: "气管", pipeSize: "22.2mm" },
+            { modelId: 15, pipeType: "液管", pipeSize: "9.53mm" },
+            { modelId: 15, pipeType: "分歧管", pipeSize: "HFQ - 102F" },
+            { modelId: 16, pipeType: "气管", pipeSize: "25.4mm" },
+            { modelId: 16, pipeType: "液管", pipeSize: "12.7mm" },
+            { modelId: 16, pipeType: "分歧管", pipeSize: "HFQ - 162F" },
+            { modelId: 17, pipeType: "气管", pipeSize: "28.6mm" },
+            { modelId: 17, pipeType: "液管", pipeSize: "12.7mm" },
+            { modelId: 17, pipeType: "分歧管", pipeSize: "HFQ - 162F" },
+            { modelId: 18, pipeType: "气管", pipeSize: "28.6mm" },
+            { modelId: 18, pipeType: "液管", pipeSize: "15.88mm" },
+            { modelId: 18, pipeType: "分歧管", pipeSize: "HFQ - 242F" },
+            { modelId: 19, pipeType: "气管", pipeSize: "31.75mm" },
+            { modelId: 19, pipeType: "液管", pipeSize: "19.05mm" },
+            { modelId: 19, pipeType: "分歧管", pipeSize: "HFQ - 302F" },
+            { modelId: 20, pipeType: "气管", pipeSize: "38.1mm" },
+            { modelId: 20, pipeType: "液管", pipeSize: "19.05mm" },
+            { modelId: 20, pipeType: "分歧管", pipeSize: "HFQ - 302F" },
+            { modelId: 21, pipeType: "气管", pipeSize: "41.3mm" },
+            { modelId: 21, pipeType: "液管", pipeSize: "22.2mm" },
+            { modelId: 21, pipeType: "分歧管", pipeSize: "HFQ - 562F" },
+            { modelId: 22, pipeType: "气管", pipeSize: "44.5mm" },
+            { modelId: 22, pipeType: "液管", pipeSize: "22.2mm" },
+            { modelId: 22, pipeType: "分歧管", pipeSize: "HFQ - 562F" },
+            { modelId: 23, pipeType: "气管", pipeSize: "50.8mm" },
+            { modelId: 23, pipeType: "液管", pipeSize: "25.4mm" },
+            { modelId: 23, pipeType: "分歧管", pipeSize: "HFQ - 682F" },
+            { modelId: 24, pipeType: "气管", pipeSize: "53.98mm" },
+            { modelId: 24, pipeType: "液管", pipeSize: "28.6mm" },
+            { modelId: 24, pipeType: "分歧管", pipeSize: "HFQ - 682F" },
+            { modelId: 25, pipeType: "气管", pipeSize: "15.88mm" },
+            { modelId: 25, pipeType: "液管", pipeSize: "9.53mm" },
+            { modelId: 25, pipeType: "分歧管", pipeSize: "E - 102SN" },
+            { modelId: 26, pipeType: "气管", pipeSize: "19.05mm" },
+            { modelId: 26, pipeType: "液管", pipeSize: "9.53mm" },
+            { modelId: 26, pipeType: "分歧管", pipeSize: "E - 102SN" },
+            { modelId: 27, pipeType: "气管", pipeSize: "22.2mm" },
+            { modelId: 27, pipeType: "液管", pipeSize: "9.53mm" },
+            { modelId: 27, pipeType: "分歧管", pipeSize: "E - 102SN" },
+            { modelId: 28, pipeType: "气管", pipeSize: "25.4mm" },
+            { modelId: 28, pipeType: "液管", pipeSize: "12.7mm" },
+            { modelId: 28, pipeType: "分歧管", pipeSize: "E - 162SN" },
+            { modelId: 29, pipeType: "气管", pipeSize: "28.6mm" },
+            { modelId: 29, pipeType: "液管", pipeSize: "12.7mm" },
+            { modelId: 29, pipeType: "分歧管", pipeSize: "E - 162SN" },
+            { modelId: 30, pipeType: "气管", pipeSize: "28.6mm" },
+            { modelId: 30, pipeType: "液管", pipeSize: "15.88mm" },
+            { modelId: 30, pipeType: "分歧管", pipeSize: "E - 242SN" },
+            { modelId: 31, pipeType: "气管", pipeSize: "31.75mm" },
+            { modelId: 31, pipeType: "液管", pipeSize: "19.05mm" },
+            { modelId: 31, pipeType: "分歧管", pipeSize: "E - 302SN" },
+            { modelId: 32, pipeType: "气管", pipeSize: "38.1mm" },
+            { modelId: 32, pipeType: "液管", pipeSize: "19.05mm" },
+            { modelId: 32, pipeType: "分歧管", pipeSize: "E - 302SN" },
+            { modelId: 33, pipeType: "气管", pipeSize: "44.5mm" },
+            { modelId: 33, pipeType: "液管", pipeSize: "19.05mm" },
+            { modelId: 33, pipeType: "分歧管", pipeSize: "E - 462SN" },
+            { modelId: 34, pipeType: "气管", pipeSize: "44.5mm" },
+            { modelId: 34, pipeType: "液管", pipeSize: "22.2mm" },
+            { modelId: 34, pipeType: "分歧管", pipeSize: "E - 462SN" },
+            { modelId: 35, pipeType: "气管", pipeSize: "50.8mm" },
+            { modelId: 35, pipeType: "液管", pipeSize: "22.2mm" },
+            { modelId: 35, pipeType: "分歧管", pipeSize: "E - 682SN" },
+            { modelId: 36, pipeType: "气管", pipeSize: "50.8mm" },
+            { modelId: 36, pipeType: "液管", pipeSize: "25.4mm" },
+            { modelId: 36, pipeType: "分歧管", pipeSize: "E - 682SN" },
+            { modelId: 37, pipeType: "气管", pipeSize: "12.7mm" },
+            { modelId: 37, pipeType: "液管", pipeSize: "9.52mm" },
+            { modelId: 37, pipeType: "分歧管", pipeSize: "DIS-22-1" },
+            { modelId: 38, pipeType: "气管", pipeSize: "15.88mm" },
+            { modelId: 38, pipeType: "液管", pipeSize: "9.52mm" },
+            { modelId: 38, pipeType: "分歧管", pipeSize: "DIS-22-1" },
+            { modelId: 39, pipeType: "气管", pipeSize: "19.05mm" },
+            { modelId: 39, pipeType: "液管", pipeSize: "12.7mm" },
+            { modelId: 39, pipeType: "分歧管", pipeSize: "DIS-180-1" },
+            { modelId: 40, pipeType: "气管", pipeSize: "25.4mm" },
+            { modelId: 40, pipeType: "液管", pipeSize: "15.88mm" },
+            { modelId: 40, pipeType: "分歧管", pipeSize: "DIS-371-1" },
+            { modelId: 41, pipeType: "气管", pipeSize: "28.58mm" },
+            { modelId: 41, pipeType: "液管", pipeSize: "15.88mm" },
+            { modelId: 41, pipeType: "分歧管", pipeSize: "DIS-540-1" },
+            { modelId: 42, pipeType: "气管", pipeSize: "31.8mm" },
+            { modelId: 42, pipeType: "液管", pipeSize: "19.05mm" },
+            { modelId: 42, pipeType: "分歧管", pipeSize: "DIS-540-1" },
+            { modelId: 43, pipeType: "气管", pipeSize: "38.1mm" },
+            { modelId: 43, pipeType: "液管", pipeSize: "19.05mm" },
+            { modelId: 43, pipeType: "分歧管", pipeSize: "DIS-1450-1" },
+            { modelId: 44, pipeType: "气管", pipeSize: "41.3mm" },
+            { modelId: 44, pipeType: "液管", pipeSize: "19.05mm" },
+            { modelId: 44, pipeType: "分歧管", pipeSize: "DIS-1450-1" },
+            { modelId: 45, pipeType: "气管", pipeSize: "44.5mm" },
+            { modelId: 45, pipeType: "液管", pipeSize: "22.22mm" },
+            { modelId: 45, pipeType: "分歧管", pipeSize: "DIS-1450-1" },
+            { modelId: 46, pipeType: "气管", pipeSize: "15.9mm" },
+            { modelId: 46, pipeType: "液管", pipeSize: "9.5mm" },
+            { modelId: 46, pipeType: "分歧管", pipeSize: "KHRP26NC22T" },
+            { modelId: 47, pipeType: "气管", pipeSize: "19.1mm" },
+            { modelId: 47, pipeType: "液管", pipeSize: "9.5mm" },
+            { modelId: 47, pipeType: "分歧管", pipeSize: "KHRP26NC22T" },
+            { modelId: 48, pipeType: "气管", pipeSize: "22.2mm" },
+            { modelId: 48, pipeType: "液管", pipeSize: "9.5mm" },
+            { modelId: 48, pipeType: "分歧管", pipeSize: "KHRP26NC33T" },
+            { modelId: 49, pipeType: "气管", pipeSize: "28.6mm" },
+            { modelId: 49, pipeType: "液管", pipeSize: "12.7mm" },
+            { modelId: 49, pipeType: "分歧管", pipeSize: "KHRP26NC72T" }
+        ];
+
+        // ============ 权限管理 ============
+        const ADMIN_USERNAME = 'admin';
+        const ADMIN_PASSWORD = 'admin123';
+        const USER_USERNAME = 'user';
+        const USER_PASSWORD = 'user123';
+
+        // 优先从 localStorage 读取登录状态（记住我），如果不存在则从 sessionStorage 读取
+        let isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || sessionStorage.getItem('session_isLoggedIn') === 'true';
+        let isAdmin = localStorage.getItem('isAdmin') === 'true' || sessionStorage.getItem('session_isAdmin') === 'true';
+
+        // DOM元素 - 权限管理相关
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const loginModal = document.getElementById('loginModal');
+        const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const adminPanel = document.getElementById('adminPanel');
+
+        // DOM元素 - 查询相关（必须在定义函数前声明）
+        const brandSelect = document.getElementById('brandSelect');
+        const modelSelect = document.getElementById('modelSelect');
+        const resultContainer = document.getElementById('resultContainer');
+        const pipeSpecsContainer = document.getElementById('pipeSpecs');
+        const noDataMessage = document.getElementById('noDataMessage');
+
+        // 一拖一页面DOM元素
+        const brandSelect2 = document.getElementById('brandSelect2');
+        const modelSelect2 = document.getElementById('modelSelect2');
+        const resultContainer2 = document.getElementById('resultContainer2');
+        const pipeSpecsContainer2 = document.getElementById('pipeSpecs2');
+        const noDataMessage2 = document.getElementById('noDataMessage2');
+
+        // 多联机下游管径页面DOM元素
+        const brandSelect3 = document.getElementById('brandSelect3');
+        const modelSelect3 = document.getElementById('modelSelect3');
+        const resultContainer3 = document.getElementById('resultContainer3');
+        const pipeSpecsContainer3 = document.getElementById('pipeSpecs3');
+        const noDataMessage3 = document.getElementById('noDataMessage3');
+        const totalCapacity3 = document.getElementById('totalCapacity3');
+        const clearAllBtn3 = document.getElementById('clearAllBtn3');
+        const indoorUnitsContainer = document.getElementById('indoorUnitsContainer');
+        const indoorUnitsScrollContainer = document.getElementById('indoorUnitsScrollContainer');
+
+        // 调试：检查所有DOM元素是否正确获取
+        console.log('=== DOM元素获取检查 ===');
+        console.log('brandSelect:', brandSelect ? 'OK' : 'NULL');
+        console.log('brandSelect2:', brandSelect2 ? 'OK' : 'NULL');
+        console.log('brandSelect3:', brandSelect3 ? 'OK' : 'NULL');
+        console.log('adminPanel:', adminPanel ? 'OK' : 'NULL');
+
+        // ============ 登录相关事件 ============
+        // 登录按钮点击
+        loginBtn.addEventListener('click', () => {
+            console.log('点击登录按钮');
+            loginModal.classList.remove('hidden');
+        });
+
+        // 提交登录
+        loginSubmitBtn.addEventListener('click', () => {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+            const rememberMe = document.getElementById('rememberMe').checked;
+            console.log('尝试登录 - 用户名:', username, '记住我:', rememberMe);
+
+            // 管理员登录
+            if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+                console.log('管理员登录成功');
+                isLoggedIn = true;
+                isAdmin = true;
+                if (rememberMe) {
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('isAdmin', 'true');
+                    localStorage.removeItem('session_isLoggedIn');
+                    localStorage.removeItem('session_isAdmin');
+                } else {
+                    sessionStorage.setItem('session_isLoggedIn', 'true');
+                    sessionStorage.setItem('session_isAdmin', 'true');
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('isAdmin');
+                }
+                loginModal.classList.add('hidden');
+                usernameInput.value = '';
+                passwordInput.value = '';
+                updateUI();
+                alert('管理员登录成功！');
+            }
+            // 普通用户登录
+            else if (username === USER_USERNAME && password === USER_PASSWORD) {
+                console.log('普通用户登录成功');
+                isLoggedIn = true;
+                isAdmin = false;
+                if (rememberMe) {
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('isAdmin', 'false');
+                    localStorage.removeItem('session_isLoggedIn');
+                    localStorage.removeItem('session_isAdmin');
+                } else {
+                    sessionStorage.setItem('session_isLoggedIn', 'true');
+                    sessionStorage.setItem('session_isAdmin', 'false');
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('isAdmin');
+                }
+                loginModal.classList.add('hidden');
+                usernameInput.value = '';
+                passwordInput.value = '';
+                updateUI();
+                alert('登录成功！');
+            }
+            else {
+                console.log('登录失败：用户名或密码错误');
+                alert('用户名或密码错误！');
+            }
+        });
+
+        // 登出按钮点击
+        logoutBtn.addEventListener('click', () => {
+            console.log('点击登出按钮');
+            isLoggedIn = false;
+            isAdmin = false;
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('isAdmin');
+            sessionStorage.removeItem('session_isLoggedIn');
+            sessionStorage.removeItem('session_isAdmin');
+            updateUI();
+            alert('已退出登录！');
+        });
+
+        // ============ UI更新函数 ============
+
+        // 更新UI显示
+        function updateUI() {
+            try {
+                console.log('=== 更新UI ===');
+                console.log('当前登录状态:', isLoggedIn);
+                console.log('是否管理员:', isAdmin);
+                console.log('adminPanel元素:', adminPanel);
+                console.log('adminPanel classList:', adminPanel ? adminPanel.classList.value : 'NULL');
+
+                const loginWelcome = document.getElementById('loginWelcome');
+                const mainContent = document.getElementById('mainContent');
+
+                if (isLoggedIn) {
+                    // 登录状态：显示主页面，隐藏登录欢迎页
+                    if (loginWelcome) loginWelcome.classList.add('hidden');
+                    if (mainContent) mainContent.classList.remove('hidden');
+
+                    loginBtn.classList.add('hidden');
+                    logoutBtn.classList.remove('hidden');
+                    console.log('已登录 - 显示登出按钮');
+
+                    // 只有管理员才能看到管理面板和管理按钮
+                    if (isAdmin) {
+                        console.log('管理员登录 - 显示管理面板');
+                        adminPanel.classList.remove('hidden');
+                        // 显示各个版面的管理按钮
+                        document.getElementById('adminButtonsMulti').classList.remove('hidden');
+                        document.getElementById('adminButtonsOneToOne').classList.remove('hidden');
+                        document.getElementById('adminButtonsDownstream').classList.remove('hidden');
+                    } else {
+                        console.log('普通用户登录 - 隐藏管理面板');
+                        adminPanel.classList.add('hidden');
+                        // 隐藏各个版面的管理按钮
+                        document.getElementById('adminButtonsMulti').classList.add('hidden');
+                        document.getElementById('adminButtonsOneToOne').classList.add('hidden');
+                        document.getElementById('adminButtonsDownstream').classList.add('hidden');
+                    }
+                    // 启用查询功能
+                    enableQueryFunctions();
+                } else {
+                    // 未登录状态：显示登录欢迎页，隐藏主页面
+                    if (loginWelcome) loginWelcome.classList.remove('hidden');
+                    if (mainContent) mainContent.classList.add('hidden');
+
+                    loginBtn.classList.add('hidden');
+                    logoutBtn.classList.add('hidden');
+                    adminPanel.classList.add('hidden');
+                    // 隐藏各个版面的管理按钮
+                    document.getElementById('adminButtonsMulti').classList.add('hidden');
+                    document.getElementById('adminButtonsOneToOne').classList.add('hidden');
+                    document.getElementById('adminButtonsDownstream').classList.add('hidden');
+                    // 禁用查询功能
+                    disableQueryFunctions();
+                }
+            } catch (error) {
+                console.error('updateUI 错误:', error);
+            }
+        }
+
+        // 禁用查询功能
+        function disableQueryFunctions() {
+            try {
+                console.log('=== 禁用查询功能 ===');
+
+                // 禁用多联机内机页面
+                if (brandSelect && modelSelect) {
+                    console.log('禁用前 - brandSelect选项数:', brandSelect.options.length);
+                    brandSelect.disabled = true;
+                    modelSelect.disabled = true;
+                    resultContainer.classList.add('hidden');
+                    noDataMessage.classList.add('hidden');
+                    document.getElementById('loginTip1').classList.remove('hidden');
+                }
+
+                // 禁用一拖一页面
+                if (brandSelect2 && modelSelect2) {
+                    console.log('禁用前 - brandSelect2选项数:', brandSelect2.options.length);
+                    brandSelect2.disabled = true;
+                    modelSelect2.disabled = true;
+                    resultContainer2.classList.add('hidden');
+                    noDataMessage2.classList.add('hidden');
+                    document.getElementById('loginTip2').classList.remove('hidden');
+                }
+
+                // 禁用多联机下游管径页面
+                if (brandSelect3) {
+                    console.log('禁用前 - brandSelect3选项数:', brandSelect3.options.length);
+                    brandSelect3.disabled = true;
+                    resultContainer3.classList.add('hidden');
+                    noDataMessage3.classList.add('hidden');
+                    document.getElementById('loginTip3').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('disableQueryFunctions 错误:', error);
+            }
+        }
+
+        // 启用查询功能
+        function enableQueryFunctions() {
+            try {
+                console.log('=== 启用查询功能 ===');
+                console.log('登录状态:', isLoggedIn);
+
+                // 启用多联机内机页面
+                if (brandSelect) {
+                    console.log('多联机内机页面 - 品牌选择器选项数:', brandSelect.options.length);
+                    brandSelect.disabled = false;
+                    document.getElementById('loginTip1').classList.add('hidden');
+                }
+
+                // 启用一拖一页面
+                if (brandSelect2) {
+                    console.log('一拖一页面 - 品牌选择器选项数:', brandSelect2.options.length);
+                    // 确保品牌选择器已初始化（只有默认选项时才初始化）
+                    if (brandSelect2.options.length <= 1) {
+                        console.log('初始化一拖一品牌选择器');
+                        initBrandSelect2();
+                    } else {
+                        console.log('一拖一品牌选择器已初始化，跳过');
+                    }
+                    brandSelect2.disabled = false;
+                    document.getElementById('loginTip2').classList.add('hidden');
+                }
+
+                // 启用多联机下游管径页面
+                if (brandSelect3) {
+                    console.log('多联机下游管径页面 - 品牌选择器选项数:', brandSelect3.options.length);
+                    // 确保品牌选择器已初始化（只有默认选项时才初始化）
+                    if (brandSelect3.options.length <= 1) {
+                        console.log('初始化多联机下游管径品牌选择器');
+                        initBrandSelect3();
+                    } else {
+                        console.log('多联机下游管径品牌选择器已初始化，跳过');
+                    }
+                    brandSelect3.disabled = false;
+                    document.getElementById('loginTip3').classList.add('hidden');
+                }
+            } catch (error) {
+                console.error('enableQueryFunctions 错误:', error);
+            }
+        }
+
+        // ============ 数据管理 ============
+
+
+        // 导出多联机内机数据（分列格式）
+        document.getElementById('exportMultiBtn').addEventListener('click', () => {
+            console.log('=== 开始导出多联机内机数据 ===');
+            try {
+                const dateStr = new Date().toISOString().slice(0, 10);
+                const workbook = XLSX.utils.book_new();
+                const data = [];
+
+                models.forEach(model => {
+                    const brand = brands.find(b => b.id === model.brandId);
+                    const specs = pipeSpecs.filter(ps => ps.modelId === model.id);
+
+                    const gasPipe = specs.find(s => s.pipeType === '气管')?.pipeSize || '';
+                    const liquidPipe = specs.find(s => s.pipeType === '液管')?.pipeSize || '';
+
+                    data.push({
+                        '品牌': brand ? brand.name : '',
+                        '设备冷量': model.modelName,
+                        '气管': gasPipe,
+                        '液管': liquidPipe
+                    });
+                });
+
+                const sheet = XLSX.utils.json_to_sheet(data);
+                XLSX.utils.book_append_sheet(workbook, sheet, '多联机内机管径数据');
+                XLSX.writeFile(workbook, `多联机内机数据_${dateStr}.xlsx`);
+                console.log('多联机内机数据导出成功');
+                alert(`多联机内机数据导出成功！\n文件名：多联机内机数据_${dateStr}.xlsx`);
+            } catch (error) {
+                console.error('导出失败:', error);
+                alert('数据导出失败：' + error.message);
+            }
+        });
+
+        // 导出一拖一数据（分列格式）
+        document.getElementById('exportOneToOneBtn').addEventListener('click', () => {
+            console.log('=== 开始导出一拖一数据 ===');
+            try {
+                const dateStr = new Date().toISOString().slice(0, 10);
+                const workbook = XLSX.utils.book_new();
+                const data = [];
+
+                oneToOneModels.forEach(model => {
+                    const brand = brands.find(b => b.id === model.brandId);
+                    const specs = oneToOnePipeSpecs.filter(ps => ps.modelId === model.id);
+
+                    const gasPipe = specs.find(s => s.pipeType === '气管')?.pipeSize || '';
+                    const liquidPipe = specs.find(s => s.pipeType === '液管')?.pipeSize || '';
+
+                    data.push({
+                        '品牌': brand ? brand.name : '',
+                        '设备冷量': model.modelName,
+                        '气管': gasPipe,
+                        '液管': liquidPipe
+                    });
+                });
+
+                const sheet = XLSX.utils.json_to_sheet(data);
+                XLSX.utils.book_append_sheet(workbook, sheet, '一拖一管径数据');
+                XLSX.writeFile(workbook, `一拖一数据_${dateStr}.xlsx`);
+                console.log('一拖一数据导出成功');
+                alert(`一拖一数据导出成功！\n文件名：一拖一数据_${dateStr}.xlsx`);
+            } catch (error) {
+                console.error('导出失败:', error);
+                alert('数据导出失败：' + error.message);
+            }
+        });
+
+        // 导出下游管径数据（分列格式）
+        document.getElementById('exportDownstreamBtn').addEventListener('click', () => {
+            console.log('=== 开始导出下游管径数据 ===');
+            try {
+                const dateStr = new Date().toISOString().slice(0, 10);
+                const workbook = XLSX.utils.book_new();
+                const data = [];
+
+                downstreamModels.forEach(model => {
+                    const brand = brands.find(b => b.id === model.brandId);
+                    const specs = downstreamPipeSpecs.filter(ps => ps.modelId === model.id);
+
+                    const gasPipe = specs.find(s => s.pipeType === '气管')?.pipeSize || '';
+                    const liquidPipe = specs.find(s => s.pipeType === '液管')?.pipeSize || '';
+                    const branchPipe = specs.find(s => s.pipeType === '分歧管')?.pipeSize || '';
+
+                    data.push({
+                        '品牌': brand ? brand.name : '',
+                        '设备冷量': model.modelName,
+                        '气管': gasPipe,
+                        '液管': liquidPipe,
+                        '分歧管': branchPipe
+                    });
+                });
+
+                const sheet = XLSX.utils.json_to_sheet(data);
+                XLSX.utils.book_append_sheet(workbook, sheet, '下游管径数据');
+                XLSX.writeFile(workbook, `下游管径数据_${dateStr}.xlsx`);
+                console.log('下游管径数据导出成功');
+                alert(`下游管径数据导出成功！\n文件名：下游管径数据_${dateStr}.xlsx`);
+            } catch (error) {
+                console.error('导出失败:', error);
+                alert('数据导出失败：' + error.message);
+            }
+        });
+
+        // 多联机内机导入模态框事件
+        document.getElementById('importMultiBtn').addEventListener('click', () => {
+            document.getElementById('importModalMulti').classList.remove('hidden');
+        });
+
+        document.getElementById('importMultiCancelBtn').addEventListener('click', () => {
+            document.getElementById('importModalMulti').classList.add('hidden');
+            document.getElementById('importMultiFile2').value = '';
+        });
+
+        // 一拖一导入模态框事件
+        document.getElementById('importOneToOneBtn').addEventListener('click', () => {
+            document.getElementById('importModalOneToOne').classList.remove('hidden');
+        });
+
+        document.getElementById('importOneToOneCancelBtn').addEventListener('click', () => {
+            document.getElementById('importModalOneToOne').classList.add('hidden');
+            document.getElementById('importOneToOneFile2').value = '';
+        });
+
+        // 多联机下游管径导入模态框事件
+        document.getElementById('importDownstreamBtn').addEventListener('click', () => {
+            document.getElementById('importModalDownstream').classList.remove('hidden');
+        });
+
+        document.getElementById('importDownstreamCancelBtn').addEventListener('click', () => {
+            document.getElementById('importModalDownstream').classList.add('hidden');
+            document.getElementById('importDownstreamFile2').value = '';
+        });
+
+        // 处理单个文件导入
+        function processImportFile(file) {
+            return new Promise((resolve, reject) => {
+                if (!file) {
+                    resolve({ success: false, message: '未选择文件' });
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const data = new Uint8Array(event.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const sheetName = workbook.SheetNames[0];
+                        const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+                        resolve({ success: true, data: sheetData });
+                    } catch (error) {
+                        console.error('导入失败:', error);
+                        resolve({ success: false, message: error.message });
+                    }
+                };
+                reader.onerror = () => resolve({ success: false, message: '文件读取失败' });
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        // 多联机内机导入
+        document.getElementById('importMultiSubmitBtn').addEventListener('click', async () => {
+            const file = document.getElementById('importMultiFile2').files[0];
+            if (!file) {
+                alert('请选择Excel文件！');
+                return;
+            }
+
+            try {
+                const result = await processImportFile(file);
+
+                if (result.success && result.data.length > 0) {
+                    // 清空多联机内机数据
+                    models.length = 0;
+                    pipeSpecs.length = 0;
+
+                    const brandMap = new Map();
+                    const modelMap = new Map();
+                    let brandIdCounter = Math.max(...brands.map(b => b.id), 0) + 1;
+
+                    result.data.forEach(row => {
+                        // 处理品牌
+                        const brandName = row['品牌'] || '';
+                        if (brandName && !brandMap.has(brandName)) {
+                            const existingBrand = brands.find(b => b.name === brandName);
+                            const brandId = existingBrand ? existingBrand.id : brandIdCounter++;
+                            if (!existingBrand) {
+                                brands.push({ id: brandId, name: brandName });
+                            }
+                            brandMap.set(brandName, brandId);
+                        }
+
+                        const brandId = brandMap.get(brandName);
+
+                        // 处理型号
+                        const capacity = row['设备冷量'] || row['型号名称'] || '';
+                        const modelKey = `${brandId}_${capacity}`;
+
+                        if (capacity && !modelMap.has(modelKey)) {
+                            const modelId = modelMap.size + 1;
+                            modelMap.set(modelKey, modelId);
+                            models.push({
+                                id: modelId,
+                                brandId: brandId,
+                                modelName: capacity.toString(),
+                                capacity: `${capacity} kW`
+                            });
+
+                            // 处理管径
+                            if (row['气管']) {
+                                pipeSpecs.push({
+                                    modelId: modelId,
+                                    pipeType: '气管',
+                                    pipeSize: row['气管']
+                                });
+                            }
+                            if (row['液管']) {
+                                pipeSpecs.push({
+                                    modelId: modelId,
+                                    pipeType: '液管',
+                                    pipeSize: row['液管']
+                                });
+                            }
+                        }
+                    });
+
+                    // 更新界面
+                    initBrandSelect();
+                    document.getElementById('importModalMulti').classList.add('hidden');
+                    document.getElementById('importMultiFile2').value = '';
+                    alert(`多联机内机数据导入成功！\n共导入 ${models.length} 条数据`);
+                } else if (result.success) {
+                    alert('导入失败：文件无数据');
+                } else {
+                    alert('导入失败：' + result.message);
+                }
+            } catch (error) {
+                console.error('导入失败:', error);
+                alert('数据导入失败：' + error.message);
+            }
+        });
+
+        // 一拖一导入
+        document.getElementById('importOneToOneSubmitBtn').addEventListener('click', async () => {
+            const file = document.getElementById('importOneToOneFile2').files[0];
+            if (!file) {
+                alert('请选择Excel文件！');
+                return;
+            }
+
+            try {
+                const result = await processImportFile(file);
+
+                if (result.success && result.data.length > 0) {
+                    // 清空一拖一数据
+                    oneToOneModels.length = 0;
+                    oneToOnePipeSpecs.length = 0;
+
+                    const brandMap = new Map();
+                    const modelMap = new Map();
+                    let brandIdCounter = Math.max(...brands.map(b => b.id), 0) + 1;
+
+                    result.data.forEach(row => {
+                        // 处理品牌
+                        const brandName = row['品牌'] || '';
+                        if (brandName && !brandMap.has(brandName)) {
+                            const existingBrand = brands.find(b => b.name === brandName);
+                            const brandId = existingBrand ? existingBrand.id : brandIdCounter++;
+                            if (!existingBrand) {
+                                brands.push({ id: brandId, name: brandName });
+                            }
+                            brandMap.set(brandName, brandId);
+                        }
+
+                        const brandId = brandMap.get(brandName);
+
+                        // 处理型号
+                        const capacity = row['设备冷量'] || row['型号名称'] || '';
+                        const modelKey = `${brandId}_${capacity}`;
+
+                        if (capacity && !modelMap.has(modelKey)) {
+                            const modelId = 1000 + modelMap.size + 1;
+                            modelMap.set(modelKey, modelId);
+                            oneToOneModels.push({
+                                id: modelId,
+                                brandId: brandId,
+                                modelName: capacity.toString(),
+                                capacity: `${capacity} HP`
+                            });
+
+                            // 处理管径
+                            if (row['气管']) {
+                                oneToOnePipeSpecs.push({
+                                    modelId: modelId,
+                                    pipeType: '气管',
+                                    pipeSize: row['气管']
+                                });
+                            }
+                            if (row['液管']) {
+                                oneToOnePipeSpecs.push({
+                                    modelId: modelId,
+                                    pipeType: '液管',
+                                    pipeSize: row['液管']
+                                });
+                            }
+                        }
+                    });
+
+                    // 更新界面
+                    initBrandSelect2();
+                    document.getElementById('importModalOneToOne').classList.add('hidden');
+                    document.getElementById('importOneToOneFile2').value = '';
+                    alert(`一拖一数据导入成功！\n共导入 ${oneToOneModels.length} 条数据`);
+                } else if (result.success) {
+                    alert('导入失败：文件无数据');
+                } else {
+                    alert('导入失败：' + result.message);
+                }
+            } catch (error) {
+                console.error('导入失败:', error);
+                alert('数据导入失败：' + error.message);
+            }
+        });
+
+        // 多联机下游管径导入
+        document.getElementById('importDownstreamSubmitBtn').addEventListener('click', async () => {
+            const file = document.getElementById('importDownstreamFile2').files[0];
+            if (!file) {
+                alert('请选择Excel文件！');
+                return;
+            }
+
+            try {
+                const result = await processImportFile(file);
+
+                if (result.success && result.data.length > 0) {
+                    // 清空多联机下游管径数据
+                    downstreamModels.length = 0;
+                    downstreamPipeSpecs.length = 0;
+
+                    const brandMap = new Map();
+                    const modelMap = new Map();
+                    let brandIdCounter = Math.max(...brands.map(b => b.id), 0) + 1;
+
+                    result.data.forEach(row => {
+                        // 处理品牌
+                        const brandName = row['品牌'] || '';
+                        if (brandName && !brandMap.has(brandName)) {
+                            const existingBrand = brands.find(b => b.name === brandName);
+                            const brandId = existingBrand ? existingBrand.id : brandIdCounter++;
+                            if (!existingBrand) {
+                                brands.push({ id: brandId, name: brandName });
+                            }
+                            brandMap.set(brandName, brandId);
+                        }
+
+                        const brandId = brandMap.get(brandName);
+
+                        // 处理型号
+                        const capacity = row['设备冷量'] || row['型号名称'] || '';
+                        const modelKey = `${brandId}_${capacity}`;
+
+                        if (capacity && !modelMap.has(modelKey)) {
+                            const modelId = modelMap.size + 1;
+                            modelMap.set(modelKey, modelId);
+                            downstreamModels.push({
+                                id: modelId,
+                                brandId: brandId,
+                                modelName: capacity.toString(),
+                                capacity: `${capacity} kW`
+                            });
+
+                            // 处理管径（含分歧管）
+                            if (row['气管']) {
+                                downstreamPipeSpecs.push({
+                                    modelId: modelId,
+                                    pipeType: '气管',
+                                    pipeSize: row['气管']
+                                });
+                            }
+                            if (row['液管']) {
+                                downstreamPipeSpecs.push({
+                                    modelId: modelId,
+                                    pipeType: '液管',
+                                    pipeSize: row['液管']
+                                });
+                            }
+                            if (row['分歧管']) {
+                                downstreamPipeSpecs.push({
+                                    modelId: modelId,
+                                    pipeType: '分歧管',
+                                    pipeSize: row['分歧管']
+                                });
+                            }
+                        }
+                    });
+
+                    // 更新界面
+                    initBrandSelect3();
+                    document.getElementById('importModalDownstream').classList.add('hidden');
+                    document.getElementById('importDownstreamFile2').value = '';
+                    alert(`多联机下游管径数据导入成功！\n共导入 ${downstreamModels.length} 条数据`);
+                } else if (result.success) {
+                    alert('导入失败：文件无数据');
+                } else {
+                    alert('导入失败：' + result.message);
+                }
+            } catch (error) {
+                console.error('导入失败:', error);
+                alert('数据导入失败：' + error.message);
+            }
+        });
+
+
+        // 标签页DOM元素
+        const tabMulti = document.getElementById('tabMulti');
+        const tabDownstream = document.getElementById('tabDownstream');
+        const tabOneToOne = document.getElementById('tabOneToOne');
+        const multiPage = document.getElementById('multiPage');
+        const downstreamPage = document.getElementById('downstreamPage');
+        const oneToOnePage = document.getElementById('oneToOnePage');
+
+        // 标签页切换逻辑
+        function switchTab(tab) {
+            // 重置所有标签页样式
+            [tabMulti, tabDownstream, tabOneToOne].forEach(t => {
+                t.classList.remove('border-blue-500', 'text-blue-600', 'bg-blue-50');
+                t.classList.remove('border-purple-500', 'text-purple-600', 'bg-purple-50');
+                t.classList.remove('border-green-500', 'text-green-600', 'bg-green-50');
+                t.classList.add('border-transparent', 'text-gray-600');
+            });
+
+            // 隐藏所有页面
+            multiPage.classList.add('hidden');
+            downstreamPage.classList.add('hidden');
+            oneToOnePage.classList.add('hidden');
+
+            if (tab === 'multi') {
+                // 切换到多联机内机标签页
+                tabMulti.classList.add('border-blue-500', 'text-blue-600', 'bg-blue-50');
+                tabMulti.classList.remove('border-transparent', 'text-gray-600');
+                multiPage.classList.remove('hidden');
+            } else if (tab === 'downstream') {
+                // 切换到多联机下游管径标签页
+                tabDownstream.classList.add('border-purple-500', 'text-purple-600', 'bg-purple-50');
+                tabDownstream.classList.remove('border-transparent', 'text-gray-600');
+                downstreamPage.classList.remove('hidden');
+                // 初始化多联机下游管径品牌选择器（如果还没有初始化）
+                if (brandSelect3.options.length === 1) {
+                    initBrandSelect3();
+                }
+            } else if (tab === 'oneToOne') {
+                // 切换到一拖一标签页
+                tabOneToOne.classList.add('border-green-500', 'text-green-600', 'bg-green-50');
+                tabOneToOne.classList.remove('border-transparent', 'text-gray-600');
+                oneToOnePage.classList.remove('hidden');
+                // 初始化一拖一品牌选择器（如果还没有初始化）
+                if (brandSelect2.options.length === 1) {
+                    initBrandSelect2();
+                }
+            }
+        }
+
+        tabMulti.addEventListener('click', () => switchTab('multi'));
+        tabDownstream.addEventListener('click', () => switchTab('downstream'));
+        tabOneToOne.addEventListener('click', () => switchTab('oneToOne'));
+
+        // 初始化品牌选择器
+        function initBrandSelect() {
+            try {
+                console.log('=== 初始化多联机内机品牌选择器 ===');
+                console.log('brandSelect 元素:', brandSelect);
+                console.log('品牌数量:', brands.length);
+
+                // 先清空再添加
+                brandSelect.innerHTML = '<option value="">请选择品牌</option>';
+                const sortedBrands = [...brands].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+                console.log('排序后的品牌:', sortedBrands.map(b => b.name));
+                sortedBrands.forEach(brand => {
+                    const option = document.createElement('option');
+                    option.value = brand.id;
+                    option.textContent = brand.name;
+                    brandSelect.appendChild(option);
+                });
+                console.log('初始化后选项数:', brandSelect.options.length);
+            } catch (error) {
+                console.error('initBrandSelect 错误:', error);
+            }
+        }
+
+        // 处理品牌选择
+        brandSelect.addEventListener('change', function() {
+            const brandId = parseInt(this.value);
+            console.log('=== 多联机内机品牌选择 ===');
+            console.log('选择的品牌ID:', brandId);
+            console.log('brandSelect.value:', this.value);
+            console.log('brandId类型:', typeof brandId, '值:', brandId);
+
+            // 清空型号选择
+            modelSelect.innerHTML = '<option value="">请选择冷量</option>';
+            modelSelect.disabled = !brandId;
+
+            // 隐藏结果
+            resultContainer.classList.add('hidden');
+            noDataMessage.classList.add('hidden');
+
+            if (brandId) {
+                console.log('开始查找品牌ID为', brandId, '的型号');
+                console.log('models数组长度:', models.length);
+                console.log('models前3个示例:', models.slice(0, 3).map(m => ({id: m.id, brandId: m.brandId, name: m.modelName})));
+
+                // 加载该品牌的型号
+                const brandModels = models.filter(m => m.brandId === brandId);
+                console.log('过滤后的型号数量:', brandModels.length);
+                console.log('过滤后的型号:', brandModels.map(m => ({id: m.id, brandId: m.brandId, name: m.modelName})));
+
+                // 排序
+                brandModels.sort((a, b) => parseFloat(a.modelName) - parseFloat(b.modelName));
+                console.log('排序后型号数量:', brandModels.length);
+                console.log('型号列表:', brandModels.map(m => m.modelName));
+
+                brandModels.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    option.textContent = model.modelName;
+                    modelSelect.appendChild(option);
+                });
+
+                console.log('添加后的modelSelect选项数:', modelSelect.options.length);
+                console.log('modelSelect.disabled:', modelSelect.disabled);
+            }
+        });
+
+        // 处理型号选择
+        modelSelect.addEventListener('change', function() {
+            const modelId = parseInt(this.value);
+            
+            if (modelId) {
+                displayPipeSpecs(modelId);
+            } else {
+                resultContainer.classList.add('hidden');
+                noDataMessage.classList.add('hidden');
+            }
+        });
+
+        // 显示管径规格
+        function displayPipeSpecs(modelId) {
+            const specs = pipeSpecs.filter(ps => ps.modelId === modelId);
+            
+            if (specs.length > 0) {
+                pipeSpecsContainer.innerHTML = specs.map(spec => `
+                    <div class="bg-white rounded-lg shadow-md p-5 border-l-4 ${spec.pipeType === '气管' ? 'border-blue-500' : 'border-green-500'} hover:shadow-xl transition-shadow">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${spec.pipeType === '气管' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}">
+                                ${spec.pipeType === '气管' ? '🔵' : '🟢'}
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-500 font-medium">管路类型</div>
+                                <div class="text-lg font-bold text-gray-800">${spec.pipeType}</div>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <div class="text-sm text-gray-500 font-medium mb-1">管径规格</div>
+                            <div class="text-3xl font-extrabold text-blue-600">${spec.pipeSize}</div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                // 更新设备信息和冷量信息
+                const model = models.find(m => m.id === modelId);
+                const brand = brands.find(b => b.id === model.brandId);
+                const deviceInfoEl = document.getElementById('deviceInfo');
+                const capacityInfoEl = document.getElementById('capacityInfo');
+                
+                if (deviceInfoEl && capacityInfoEl && model && brand) {
+                    deviceInfoEl.textContent = `${brand.name}`;
+                    capacityInfoEl.textContent = `设备冷量：${model.modelName} kW`;
+                }
+                
+                resultContainer.classList.remove('hidden');
+                noDataMessage.classList.add('hidden');
+            } else {
+                resultContainer.classList.add('hidden');
+                noDataMessage.classList.remove('hidden');
+            }
+        }
+
+        // 一拖一页面：初始化品牌选择器
+        function initBrandSelect2() {
+            try {
+                console.log('=== 初始化一拖一品牌选择器 ===');
+                console.log('brandSelect2 元素:', brandSelect2);
+                console.log('品牌数量:', brands.length);
+                const sortedBrands = [...brands].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+                console.log('排序后的品牌:', sortedBrands.map(b => b.name));
+                sortedBrands.forEach(brand => {
+                    const option = document.createElement('option');
+                    option.value = brand.id;
+                    option.textContent = brand.name;
+                    brandSelect2.appendChild(option);
+                });
+                console.log('初始化后选项数:', brandSelect2.options.length);
+            } catch (error) {
+                console.error('initBrandSelect2 错误:', error);
+            }
+        }
+
+        // 一拖一页面：处理品牌选择
+        brandSelect2.addEventListener('change', function() {
+            const brandId = parseInt(this.value);
+            console.log('=== 一拖一页面品牌选择 ===');
+            console.log('选择的品牌ID:', brandId);
+            console.log('使用一拖一独立数据源 oneToOneModels');
+
+            // 清空型号选择
+            modelSelect2.innerHTML = '<option value="">请选择冷量</option>';
+            modelSelect2.disabled = !brandId;
+
+            // 隐藏结果
+            resultContainer2.classList.add('hidden');
+            noDataMessage2.classList.add('hidden');
+
+            if (brandId) {
+                // 加载该品牌的型号（使用一拖一独立数据）
+                const brandModels = oneToOneModels.filter(m => m.brandId === brandId)
+                    .sort((a, b) => parseFloat(a.modelName) - parseFloat(b.modelName));
+                console.log('找到的型号数量:', brandModels.length);
+                console.log('型号列表:', brandModels.map(m => m.modelName));
+
+                brandModels.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    option.textContent = model.modelName;
+                    modelSelect2.appendChild(option);
+                });
+            }
+        });
+
+        // 一拖一页面：处理型号选择
+        modelSelect2.addEventListener('change', function() {
+            const modelId = parseInt(this.value);
+
+            if (modelId) {
+                displayPipeSpecs2(modelId);
+            } else {
+                resultContainer2.classList.add('hidden');
+                noDataMessage2.classList.add('hidden');
+            }
+        });
+
+        // 一拖一页面：显示管径规格
+        function displayPipeSpecs2(modelId) {
+            console.log('=== 一拖一页面显示管径 ===');
+            console.log('modelId:', modelId);
+            console.log('使用一拖一独立数据源 oneToOnePipeSpecs');
+
+            const specs = oneToOnePipeSpecs.filter(ps => ps.modelId === modelId);
+            console.log('找到的管径规格数量:', specs.length);
+
+            if (specs.length > 0) {
+                pipeSpecsContainer2.innerHTML = specs.map(spec => `
+                    <div class="bg-white rounded-lg shadow-md p-5 border-l-4 ${spec.pipeType === '气管' ? 'border-green-500' : 'border-emerald-500'} hover:shadow-xl transition-shadow">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${spec.pipeType === '气管' ? 'bg-green-100 text-green-600' : 'bg-emerald-100 text-emerald-600'}">
+                                ${spec.pipeType === '气管' ? '🔵' : '🟢'}
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-500 font-medium">管路类型</div>
+                                <div class="text-lg font-bold text-gray-800">${spec.pipeType}</div>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <div class="text-sm text-gray-500 font-medium mb-1">管径规格</div>
+                            <div class="text-3xl font-extrabold text-green-600">${spec.pipeSize}</div>
+                        </div>
+                    </div>
+                `).join('');
+
+                // 更新设备信息和冷量信息
+                const model = oneToOneModels.find(m => m.id === modelId);
+                const brand = brands.find(b => b.id === model.brandId);
+                const deviceInfoEl2 = document.getElementById('deviceInfo2');
+                const capacityInfoEl2 = document.getElementById('capacityInfo2');
+
+                if (deviceInfoEl2 && capacityInfoEl2 && model && brand) {
+                    deviceInfoEl2.textContent = `${brand.name}`;
+                    capacityInfoEl2.textContent = `设备冷量：${model.modelName} kW`;
+                }
+
+                resultContainer2.classList.remove('hidden');
+                noDataMessage2.classList.add('hidden');
+            } else {
+                resultContainer2.classList.add('hidden');
+                noDataMessage2.classList.remove('hidden');
+            }
+        }
+
+        // 多联机下游管径页面：初始化品牌选择器
+        function initBrandSelect3() {
+            try {
+                console.log('=== 初始化多联机下游管径品牌选择器 ===');
+                console.log('brandSelect3 元素:', brandSelect3);
+                console.log('品牌数量:', brands.length);
+                const sortedBrands = [...brands].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+                console.log('排序后的品牌:', sortedBrands.map(b => b.name));
+                sortedBrands.forEach(brand => {
+                    const option = document.createElement('option');
+                    option.value = brand.id;
+                    option.textContent = brand.name;
+                    brandSelect3.appendChild(option);
+                });
+                console.log('初始化后选项数:', brandSelect3.options.length);
+            } catch (error) {
+                console.error('initBrandSelect3 错误:', error);
+            }
+        }
+
+        // 生成室内机输入框
+        // 室内机数量
+        let indoorUnitCount = 2;
+
+        // 创建按钮HTML
+        function createButtonsHtml() {
+            return `
+                <div class="flex gap-2 mt-2">
+                    <button onclick="addIndoorUnit()" class="flex-1 px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition">
+                        + 添加
+                    </button>
+                    <button onclick="removeIndoorUnit()" class="flex-1 px-2 py-1 bg-orange-600 text-white text-xs rounded hover:bg-orange-700 transition">
+                        - 删除
+                    </button>
+                </div>
+            `;
+        }
+
+        // 更新按钮位置（移到最后一个输入框后面）
+        function updateButtonPosition() {
+            // 移除所有现有的按钮
+            const existingButtons = indoorUnitsContainer.querySelectorAll('.unit-buttons');
+            existingButtons.forEach(btn => btn.remove());
+
+            // 在最后一个输入框后面添加按钮
+            const lastInputDiv = indoorUnitsContainer.lastElementChild;
+            if (lastInputDiv) {
+                const buttonsDiv = document.createElement('div');
+                buttonsDiv.className = 'unit-buttons';
+                buttonsDiv.innerHTML = createButtonsHtml();
+                lastInputDiv.appendChild(buttonsDiv);
+            }
+        }
+
+        function generateIndoorUnitInputs() {
+            console.log('=== 生成室内机输入框 ===');
+            indoorUnitsContainer.innerHTML = '';
+
+            for (let i = 1; i <= indoorUnitCount; i++) {
+                const div = document.createElement('div');
+                div.className = i === indoorUnitCount ? 'border-b border-purple-300 pb-2' : '';
+                div.innerHTML = `
+                    <label class="block text-xs font-medium text-gray-600 mb-1">室内机 ${i}</label>
+                    <input type="number" id="indoorUnit${i}" step="0.1" min="0"
+                        class="w-full px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="kW">
+                `;
+                indoorUnitsContainer.appendChild(div);
+
+                // 给每个输入框添加input事件监听器
+                const input = div.querySelector('input');
+                input.addEventListener('input', autoCalculateTotalCapacity);
+            }
+
+            // 在最后一个输入框后面添加按钮
+            updateButtonPosition();
+
+            console.log('已生成', indoorUnitCount, '个室内机输入框');
+        }
+
+        // 添加室内机（追加模式）
+        window.addIndoorUnit = function() {
+            if (indoorUnitCount >= 40) {
+                alert('最多支持40台室内机');
+                return;
+            }
+            indoorUnitCount++;
+
+            // 先移除旧按钮
+            const existingButtons = indoorUnitsContainer.querySelectorAll('.unit-buttons');
+            existingButtons.forEach(btn => btn.remove());
+
+            // 创建新的输入框并追加到容器末尾
+            const div = document.createElement('div');
+            div.innerHTML = `
+                <label class="block text-xs font-medium text-gray-600 mb-1">室内机 ${indoorUnitCount}</label>
+                <input type="number" id="indoorUnit${indoorUnitCount}" step="0.1" min="0"
+                    class="w-full px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="kW">
+            `;
+            indoorUnitsContainer.appendChild(div);
+
+            // 给新添加的输入框添加input事件监听器
+            const input = div.querySelector('input');
+            input.addEventListener('input', autoCalculateTotalCapacity);
+
+            // 在新添加的输入框后面添加按钮
+            updateButtonPosition();
+
+            // 自动滚动到新添加的元素
+            const scrollContainer = document.getElementById('indoorUnitsScrollContainer');
+            if (scrollContainer) {
+                setTimeout(() => {
+                    scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                }, 100);
+            }
+
+            console.log('已添加第', indoorUnitCount, '台室内机');
+        };
+
+        // 删除室内机（删除最后一个）
+        window.removeIndoorUnit = function() {
+            if (indoorUnitCount <= 1) {
+                alert('至少保留1台室内机');
+                return;
+            }
+
+            // 获取最后一个输入框的值并提示
+            const lastInput = document.getElementById(`indoorUnit${indoorUnitCount}`);
+            if (lastInput && lastInput.value) {
+                if (!confirm('最后一台室内机有输入值，确定要删除吗？')) {
+                    return;
+                }
+            }
+
+            // 删除容器中的最后一个元素
+            if (indoorUnitsContainer.lastElementChild) {
+                indoorUnitsContainer.removeChild(indoorUnitsContainer.lastElementChild);
+            }
+
+            indoorUnitCount--;
+
+            // 删除后更新按钮位置到新的最后一个输入框后面
+            updateButtonPosition();
+
+            // 删除后滚动到底部（如果还有内容）
+            if (indoorUnitsScrollContainer) {
+                setTimeout(() => {
+                    indoorUnitsScrollContainer.scrollTop = indoorUnitsScrollContainer.scrollHeight;
+                }, 100);
+            }
+
+            console.log('已删除，当前室内机数量:', indoorUnitCount);
+        };
+
+        // 自动计算总冷量（不弹出提示）
+        function autoCalculateTotalCapacity() {
+            const brandId = parseInt(brandSelect3.value);
+            if (!brandId) {
+                return;
+            }
+
+            let total = 0;
+            let hasInput = false;
+
+            // 遍历所有室内机输入框
+            const inputs = indoorUnitsContainer.querySelectorAll('input[type="number"]');
+            inputs.forEach(input => {
+                const value = parseFloat(input.value);
+                if (!isNaN(value) && value > 0) {
+                    total += value;
+                    hasInput = true;
+                }
+            });
+
+            if (!hasInput) {
+                totalCapacity3.value = '0';
+                resultContainer3.classList.add('hidden');
+                noDataMessage3.classList.add('hidden');
+                return;
+            }
+
+            totalCapacity3.value = total.toFixed(2);
+
+            console.log('=== 自动计算总冷量 ===');
+            console.log('总冷量:', total.toFixed(2), 'kW');
+
+            // 根据总冷量和品牌自动匹配管径规格
+            matchAndDisplayPipeSpecs(total, brandId);
+        }
+
+        // 计算总冷量（手动触发）
+        function calculateTotalCapacity() {
+            const brandId = parseInt(brandSelect3.value);
+            if (!brandId) {
+                alert('请先选择品牌');
+                return;
+            }
+
+            autoCalculateTotalCapacity();
+        }
+
+        // 清空所有室内机输入
+        function clearAllIndoorUnits() {
+            const inputs = indoorUnitsContainer.querySelectorAll('input[type="number"]');
+            inputs.forEach(input => {
+                input.value = '';
+            });
+            totalCapacity3.value = '0';
+            resultContainer3.classList.add('hidden');
+            noDataMessage3.classList.add('hidden');
+
+            console.log('已清空所有室内机输入');
+        }
+
+        // 解析容量区间，返回最小和最大值
+        function parseCapacityRange(rangeStr) {
+            // 处理各种格式的容量区间字符串
+            // 示例: "A≤16.8", "16.8≤A<22.4", "A<16", "22.4≤A", "16≤A<25", "70未满", "7.0未满", "186.0以上~220.5"
+            // 大金格式: "＜16.8KW", "16.8≤X＜22.4KW", "22.4≤X＜33.0KW", "33.0≤X＜47.0KW"
+            console.log('解析容量区间:', rangeStr);
+
+            let min, max;
+
+            // 提取所有数字
+            const numbers = rangeStr.match(/(\d+\.?\d*)/g);
+            if (!numbers || numbers.length === 0) {
+                console.log('未找到数字');
+                return { min: Infinity, max: Infinity };
+            }
+
+            const numValues = numbers.map(n => parseFloat(n));
+
+            if (rangeStr.includes('未满')) {
+                // 格式: "70未满" 或 "7.0未满"
+                min = 0;
+                max = numValues[0];
+            } else if (rangeStr.includes('以上')) {
+                // 格式: "1100以上~1560未满" 或 "186.0以上~220.5"
+                min = numValues[0];
+                if (rangeStr.includes('未满')) {
+                    max = numValues[1];
+                } else {
+                    max = Infinity;
+                }
+            } else if (rangeStr.includes('≤') || rangeStr.includes('<') || rangeStr.includes('＜')) {
+                // 格式: "A≤16.8", "16.8≤A<22.4", "A<16", "16≤A<25", "22.4≤A"
+                // 大金格式: "＜16.8KW", "16.8≤X＜22.4KW"
+                if (rangeStr.startsWith('A≤') || rangeStr.startsWith('＜')) {
+                    // A≤16.8 或 ＜16.8KW
+                    min = 0;
+                    max = numValues[0];
+                } else if (rangeStr.startsWith('A<')) {
+                    // A<16
+                    min = 0;
+                    max = numValues[0];
+                } else if (rangeStr.includes('≤A<') || rangeStr.includes('≤X＜') || rangeStr.includes('≤X<')) {
+                    // 16.8≤A<22.4 或 16≤A<25 或 16.8≤X＜22.4KW
+                    min = numValues[0];
+                    max = numValues[1];
+                } else if (rangeStr.endsWith('≤A')) {
+                    // 22.4≤A
+                    min = numValues[0];
+                    max = Infinity;
+                }
+            } else {
+                // 其他情况，假设是一个范围或单个值
+                min = numValues[0];
+                max = numValues.length > 1 ? numValues[1] : numValues[0];
+            }
+
+            console.log('解析结果:', { min, max });
+            return { min, max };
+        }
+
+        // 根据总冷量匹配容量区间
+        function matchCapacityRange(totalCapacity, brandId) {
+            console.log('=== 匹配容量区间 ===');
+            console.log('总冷量:', totalCapacity, 'kW');
+            console.log('品牌ID:', brandId);
+
+            const brandModels = downstreamModels.filter(m => m.brandId === brandId);
+            console.log('该品牌的容量区间数量:', brandModels.length);
+
+            let matchedModel = null;
+
+            for (const model of brandModels) {
+                const { min, max } = parseCapacityRange(model.modelName);
+
+                // 检查总冷量是否在该范围内
+                // 注意：区间定义中的值可能是临界点，需要根据实际情况调整
+                // 这里假设区间包含下限，不包含上限（除了最后一个区间）
+                if (totalCapacity >= min && totalCapacity < max) {
+                    matchedModel = model;
+                    break;
+                }
+
+                // 特殊处理：如果总冷量等于max且是最后一个区间，也匹配
+                if (max === Infinity && totalCapacity >= min) {
+                    matchedModel = model;
+                    break;
+                }
+            }
+
+            if (matchedModel) {
+                console.log('匹配到的容量区间:', matchedModel.modelName);
+                console.log('Model ID:', matchedModel.id);
+                return matchedModel;
+            } else {
+                console.log('未找到匹配的容量区间');
+                return null;
+            }
+        }
+
+        // 匹配并显示管径规格
+        function matchAndDisplayPipeSpecs(totalCapacity, brandId) {
+            const matchedModel = matchCapacityRange(totalCapacity, brandId);
+
+            if (matchedModel) {
+                displayPipeSpecs3ByCapacity(matchedModel, totalCapacity, brandId);
+            } else {
+                resultContainer3.classList.add('hidden');
+                noDataMessage3.classList.remove('hidden');
+                noDataMessage3.textContent = `未找到匹配总冷量 ${totalCapacity.toFixed(2)} kW 的容量区间`;
+            }
+        }
+
+        // 多联机下游管径页面：处理品牌选择
+        brandSelect3.addEventListener('change', function() {
+            const brandId = parseInt(this.value);
+            console.log('=== 多联机下游管径页面品牌选择 ===');
+            console.log('选择的品牌ID:', brandId);
+
+            // 清空所有输入和结果
+            clearAllIndoorUnits();
+        });
+
+        // 多联机下游管径页面：清空按钮事件
+        clearAllBtn3.addEventListener('click', clearAllIndoorUnits);
+
+        // 多联机下游管径页面：显示管径规格（根据计算的总冷量）
+        function displayPipeSpecs3ByCapacity(matchedModel, totalCapacity, brandId) {
+            console.log('=== 多联机下游管径页面显示管径（根据计算结果） ===');
+            console.log('匹配的容量区间:', matchedModel.modelName);
+            console.log('总冷量:', totalCapacity.toFixed(2), 'kW');
+            console.log('品牌ID:', brandId);
+            console.log('Model ID:', matchedModel.id);
+
+            const specs = downstreamPipeSpecs.filter(ps => ps.modelId === matchedModel.id);
+            console.log('找到的管径规格数量:', specs.length);
+
+            if (specs.length > 0) {
+                pipeSpecsContainer3.innerHTML = specs.map(spec => {
+                    // 根据管路类型设置不同的颜色
+                    let borderClass, bgClass, textClass, icon;
+                    if (spec.pipeType === '气管') {
+                        borderClass = 'border-purple-500';
+                        bgClass = 'bg-purple-100 text-purple-600';
+                        textClass = 'text-purple-600';
+                        icon = '🔵';
+                    } else if (spec.pipeType === '液管') {
+                        borderClass = 'border-pink-500';
+                        bgClass = 'bg-pink-100 text-pink-600';
+                        textClass = 'text-pink-600';
+                        icon = '🟢';
+                    } else {
+                        borderClass = 'border-orange-500';
+                        bgClass = 'bg-orange-100 text-orange-600';
+                        textClass = 'text-orange-600';
+                        icon = '🟠';
+                    }
+
+                    return `
+                    <div class="bg-white rounded-lg shadow-md p-5 border-l-4 ${borderClass} hover:shadow-xl transition-shadow">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${bgClass}">
+                                ${icon}
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-500 font-medium">管路类型</div>
+                                <div class="text-lg font-bold text-gray-800">${spec.pipeType}</div>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <div class="text-sm text-gray-500 font-medium mb-1">规格</div>
+                            <div class="text-3xl font-extrabold ${textClass}">${spec.pipeSize}</div>
+                        </div>
+                    </div>
+                `}).join('');
+
+                // 更新设备信息和冷量信息
+                const brand = brands.find(b => b.id === brandId);
+                const deviceInfoEl3 = document.getElementById('deviceInfo3');
+                const capacityInfoEl3 = document.getElementById('capacityInfo3');
+
+                if (deviceInfoEl3 && capacityInfoEl3 && brand) {
+                    deviceInfoEl3.textContent = `${brand.name}`;
+                    capacityInfoEl3.textContent = `总冷量：${totalCapacity.toFixed(2)} kW（区间：${matchedModel.modelName}）`;
+                }
+
+                resultContainer3.classList.remove('hidden');
+                noDataMessage3.classList.add('hidden');
+            } else {
+                resultContainer3.classList.add('hidden');
+                noDataMessage3.classList.remove('hidden');
+                noDataMessage3.textContent = `未找到容量区间 ${matchedModel.modelName} 的管径规格数据`;
+            }
+        }
+
+        // 多联机下游管径页面：显示管径规格（保留原函数用于其他用途）
+        function displayPipeSpecs3(modelId) {
+            console.log('=== 多联机下游管径页面显示管径 ===');
+            console.log('modelId:', modelId);
+            console.log('使用多联机下游管径独立数据源 downstreamPipeSpecs');
+
+            const specs = downstreamPipeSpecs.filter(ps => ps.modelId === modelId);
+            console.log('找到的管径规格数量:', specs.length);
+
+            if (specs.length > 0) {
+                pipeSpecsContainer3.innerHTML = specs.map(spec => {
+                    // 根据管路类型设置不同的颜色
+                    let borderClass, bgClass, textClass, icon;
+                    if (spec.pipeType === '气管') {
+                        borderClass = 'border-purple-500';
+                        bgClass = 'bg-purple-100 text-purple-600';
+                        textClass = 'text-purple-600';
+                        icon = '🔵';
+                    } else if (spec.pipeType === '液管') {
+                        borderClass = 'border-pink-500';
+                        bgClass = 'bg-pink-100 text-pink-600';
+                        textClass = 'text-pink-600';
+                        icon = '🟢';
+                    } else {
+                        borderClass = 'border-orange-500';
+                        bgClass = 'bg-orange-100 text-orange-600';
+                        textClass = 'text-orange-600';
+                        icon = '🟠';
+                    }
+
+                    return `
+                    <div class="bg-white rounded-lg shadow-md p-5 border-l-4 ${borderClass} hover:shadow-xl transition-shadow">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${bgClass}">
+                                ${icon}
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-500 font-medium">管路类型</div>
+                                <div class="text-lg font-bold text-gray-800">${spec.pipeType}</div>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-gray-100">
+                            <div class="text-sm text-gray-500 font-medium mb-1">规格</div>
+                            <div class="text-3xl font-extrabold ${textClass}">${spec.pipeSize}</div>
+                        </div>
+                    </div>
+                `}).join('');
+
+                // 更新设备信息和冷量信息
+                const model = downstreamModels.find(m => m.id === modelId);
+                const brand = brands.find(b => b.id === model.brandId);
+                const deviceInfoEl3 = document.getElementById('deviceInfo3');
+                const capacityInfoEl3 = document.getElementById('capacityInfo3');
+
+                if (deviceInfoEl3 && capacityInfoEl3 && model && brand) {
+                    deviceInfoEl3.textContent = `${brand.name}`;
+                    capacityInfoEl3.textContent = `设备冷量：${model.modelName} kW`;
+                }
+
+                resultContainer3.classList.remove('hidden');
+                noDataMessage3.classList.add('hidden');
+            } else {
+                resultContainer3.classList.add('hidden');
+                noDataMessage3.classList.remove('hidden');
+            }
+        }
+
+        // 初始化
+        initBrandSelect();
+        initBrandSelect2();
+        initBrandSelect3();
+
+        // 生成室内机输入框
+        generateIndoorUnitInputs();
+
+        // 调试信息
+        console.log('=== 初始化调试信息 ===');
+        console.log('品牌数据量:', brands.length);
+        console.log('多联机内机型号数据量:', models.length);
+        console.log('多联机内机管径数据量:', pipeSpecs.length);
+        console.log('一拖一型号数据量:', oneToOneModels.length);
+        console.log('一拖一管径数据量:', oneToOnePipeSpecs.length);
+        console.log('多联机下游管径型号数据量:', downstreamModels.length);
+        console.log('多联机下游管径规格数据量:', downstreamPipeSpecs.length);
+        console.log('brandSelect选项数:', brandSelect.options.length);
+        console.log('brandSelect2选项数:', brandSelect2.options.length);
+        console.log('brandSelect3选项数:', brandSelect3.options.length);
+        console.log('localStorage登录状态:', localStorage.getItem('isLoggedIn'));
+        console.log('localStorage管理员状态:', localStorage.getItem('isAdmin'));
+
+        // 最后调用 updateUI，确保所有初始化都已完成
+        updateUI();
+        }); // 结束 DOMContentLoaded
+    </script>
+</body>
+</html>

@@ -829,36 +829,48 @@
 
         // 一拖一版面独立数据
         const oneToOneModels = [
-            { id: 1001, brandId: 1, modelName: "1.5", capacity: "1.5 HP" },
-            { id: 1002, brandId: 1, modelName: "2.0", capacity: "2.0 HP" },
-            { id: 1003, brandId: 1, modelName: "2.5", capacity: "2.5 HP" },
-            { id: 1004, brandId: 4, modelName: "1.5", capacity: "1.5 HP" },
-            { id: 1005, brandId: 4, modelName: "2.0", capacity: "2.0 HP" },
-            { id: 1006, brandId: 4, modelName: "2.5", capacity: "2.5 HP" },
-            { id: 1007, brandId: 5, modelName: "1.5", capacity: "1.5 HP" },
-            { id: 1008, brandId: 5, modelName: "2.0", capacity: "2.0 HP" },
-            { id: 1009, brandId: 5, modelName: "2.5", capacity: "2.5 HP" }
+            { id: 1001, brandId: 1, modelName: "日立-2.6", capacity: "日立 2.6 kW" },
+            { id: 1002, brandId: 1, modelName: "日立-3.5", capacity: "日立 3.5 kW" },
+            { id: 1003, brandId: 1, modelName: "日立-5", capacity: "日立 5 kW" },
+            { id: 1004, brandId: 1, modelName: "日立-7.2", capacity: "日立 7.2 kW" },
+            { id: 1005, brandId: 1, modelName: "日立-9", capacity: "日立 9 kW" },
+            { id: 1006, brandId: 1, modelName: "海信-2.6", capacity: "海信 2.6 kW" },
+            { id: 1007, brandId: 1, modelName: "海信-3.5", capacity: "海信 3.5 kW" },
+            { id: 1008, brandId: 1, modelName: "海信-5", capacity: "海信 5 kW" },
+            { id: 1009, brandId: 1, modelName: "海信-7.2", capacity: "海信 7.2 kW" },
+            { id: 1010, brandId: 1, modelName: "海信-12", capacity: "海信 12 kW" },
+            { id: 1011, brandId: 2, modelName: "美的-3.5", capacity: "美的 3.5 kW" },
+            { id: 1012, brandId: 2, modelName: "美的-5.1", capacity: "美的 5.1 kW" },
+            { id: 1013, brandId: 2, modelName: "美的-7.2", capacity: "美的 7.2 kW" }
         ];
 
         const oneToOnePipeSpecs = [
-            { modelId: 1001, pipeType: "气管", pipeSize: "Φ9.5" },
-            { modelId: 1001, pipeType: "液管", pipeSize: "Φ6.3" },
-            { modelId: 1002, pipeType: "气管", pipeSize: "Φ12.7" },
-            { modelId: 1002, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 1001, pipeType: "气管", pipeSize: "Φ9.53" },
+            { modelId: 1001, pipeType: "液管", pipeSize: "Φ6.35" },
+            { modelId: 1002, pipeType: "气管", pipeSize: "Φ9.53" },
+            { modelId: 1002, pipeType: "液管", pipeSize: "Φ6.35" },
             { modelId: 1003, pipeType: "气管", pipeSize: "Φ12.7" },
-            { modelId: 1003, pipeType: "液管", pipeSize: "Φ6.3" },
-            { modelId: 1004, pipeType: "气管", pipeSize: "Φ9.5" },
-            { modelId: 1004, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 1003, pipeType: "液管", pipeSize: "Φ6.35" },
+            { modelId: 1004, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 1004, pipeType: "液管", pipeSize: "Φ6.35" },
             { modelId: 1005, pipeType: "气管", pipeSize: "Φ12.7" },
-            { modelId: 1005, pipeType: "液管", pipeSize: "Φ6.3" },
-            { modelId: 1006, pipeType: "气管", pipeSize: "Φ12.7" },
-            { modelId: 1006, pipeType: "液管", pipeSize: "Φ6.3" },
-            { modelId: 1007, pipeType: "气管", pipeSize: "Φ9.5" },
-            { modelId: 1007, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 1005, pipeType: "液管", pipeSize: "Φ6.35" },
+            { modelId: 1006, pipeType: "气管", pipeSize: "Φ9.53" },
+            { modelId: 1006, pipeType: "液管", pipeSize: "Φ6.35" },
+            { modelId: 1007, pipeType: "气管", pipeSize: "Φ9.53" },
+            { modelId: 1007, pipeType: "液管", pipeSize: "Φ6.35" },
             { modelId: 1008, pipeType: "气管", pipeSize: "Φ12.7" },
-            { modelId: 1008, pipeType: "液管", pipeSize: "Φ6.3" },
+            { modelId: 1008, pipeType: "液管", pipeSize: "Φ6.35" },
             { modelId: 1009, pipeType: "气管", pipeSize: "Φ12.7" },
-            { modelId: 1009, pipeType: "液管", pipeSize: "Φ6.3" }
+            { modelId: 1009, pipeType: "液管", pipeSize: "Φ6.35" },
+            { modelId: 1010, pipeType: "气管", pipeSize: "Φ15.88" },
+            { modelId: 1010, pipeType: "液管", pipeSize: "Φ9.53" },
+            { modelId: 1011, pipeType: "气管", pipeSize: "Φ9.52" },
+            { modelId: 1011, pipeType: "液管", pipeSize: "Φ6.35" },
+            { modelId: 1012, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 1012, pipeType: "液管", pipeSize: "Φ6.35" },
+            { modelId: 1013, pipeType: "气管", pipeSize: "Φ12.7" },
+            { modelId: 1013, pipeType: "液管", pipeSize: "Φ6.35" }
         ];
 
         // 多联机下游管径版面独立数据
@@ -909,9 +921,14 @@ const downstreamModels = [
             { id: 44, brandId: 3, modelName: "156.0以上~186.0未满", capacity: "156.0以上~186.0未满 kW" },
             { id: 45, brandId: 3, modelName: "186.0以上~220.5", capacity: "186.0以上~220.5 kW" },
             { id: 46, brandId: 6, modelName: "＜16.8KW", capacity: "＜16.8KW kW" },
-            { id: 47, brandId: 6, modelName: "16.8≤X＜22.4KW", capacity: "16.8≤X＜22.4KW kW" },
-            { id: 48, brandId: 6, modelName: "22.4≤X＜33.0KW", capacity: "22.4≤X＜33.0KW kW" },
-            { id: 49, brandId: 6, modelName: "33.0≤X＜47.0KW", capacity: "33.0≤X＜47.0KW kW" }
+            { id: 47, brandId: 6, modelName: "16.8≤X＜22.4", capacity: "16.8≤X＜22.4 kW" },
+            { id: 48, brandId: 6, modelName: "22.4≤X＜33.0", capacity: "22.4≤X＜33.0 kW" },
+            { id: 49, brandId: 6, modelName: "33.0≤X＜47.0", capacity: "33.0≤X＜47.0 kW" },
+            { id: 50, brandId: 6, modelName: "47.0≤A<71.0", capacity: "47.0≤A<71.0 kW" },
+            { id: 51, brandId: 6, modelName: "71.0≤X＜104.0", capacity: "71.0≤X＜104.0 kW" },
+            { id: 52, brandId: 6, modelName: "104.0≤X＜154.0", capacity: "104.0≤X＜154.0 kW" },
+            { id: 53, brandId: 6, modelName: "154≤X＜190.0", capacity: "154≤X＜190.0 kW" },
+            { id: 54, brandId: 6, modelName: "190≤", capacity: "190≤ kW" },
         ];
 
         const downstreamPipeSpecs = [
@@ -1061,7 +1078,22 @@ const downstreamModels = [
             { modelId: 48, pipeType: "分歧管", pipeSize: "KHRP26NC33T" },
             { modelId: 49, pipeType: "气管", pipeSize: "28.6mm" },
             { modelId: 49, pipeType: "液管", pipeSize: "12.7mm" },
-            { modelId: 49, pipeType: "分歧管", pipeSize: "KHRP26NC72T" }
+            { modelId: 49, pipeType: "分歧管", pipeSize: "KHRP26NC72T" },
+            { modelId: 50, pipeType: "气管", pipeSize: "28.6mm" },
+            { modelId: 50, pipeType: "液管", pipeSize: "15.9mm" },
+            { modelId: 50, pipeType: "分歧管", pipeSize: "KHRP26NC72T" },
+            { modelId: 51, pipeType: "气管", pipeSize: "31.8mm" },
+            { modelId: 51, pipeType: "液管", pipeSize: "19.1mm" },
+            { modelId: 51, pipeType: "分歧管", pipeSize: "KHRP26NC73T+KHRP26MC73P" },
+            { modelId: 52, pipeType: "气管", pipeSize: "38.1mm" },
+            { modelId: 52, pipeType: "液管", pipeSize: "19.1mm" },
+            { modelId: 52, pipeType: "分歧管", pipeSize: "KHRP26NC73T+KHRP26MC73P" },
+            { modelId: 53, pipeType: "气管", pipeSize: "41.3mm" },
+            { modelId: 53, pipeType: "液管", pipeSize: "19.1mm" },
+            { modelId: 53, pipeType: "分歧管", pipeSize: "KHRP26NC74T" },
+            { modelId: 54, pipeType: "气管", pipeSize: "44.5mm" },
+            { modelId: 54, pipeType: "液管", pipeSize: "22.2mm" },
+            { modelId: 54, pipeType: "分歧管", pipeSize: "KHRP26NC74T" },
         ];
 
         // ============ 权限管理 ============
@@ -1951,6 +1983,10 @@ const downstreamModels = [
                 console.log('=== 初始化一拖一品牌选择器 ===');
                 console.log('brandSelect2 元素:', brandSelect2);
                 console.log('品牌数量:', brands.length);
+
+                // 先清空再添加
+                brandSelect2.innerHTML = '<option value="">请选择品牌</option>';
+
                 const sortedBrands = [...brands].sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
                 console.log('排序后的品牌:', sortedBrands.map(b => b.name));
                 sortedBrands.forEach(brand => {
@@ -1983,7 +2019,12 @@ const downstreamModels = [
             if (brandId) {
                 // 加载该品牌的型号（使用一拖一独立数据）
                 const brandModels = oneToOneModels.filter(m => m.brandId === brandId)
-                    .sort((a, b) => parseFloat(a.modelName) - parseFloat(b.modelName));
+                    .sort((a, b) => {
+                        // 提取型号名称中的数字部分进行排序
+                        const numA = parseFloat(a.modelName.replace(/^[^-]+-/, ''));
+                        const numB = parseFloat(b.modelName.replace(/^[^-]+-/, ''));
+                        return numA - numB;
+                    });
                 console.log('找到的型号数量:', brandModels.length);
                 console.log('型号列表:', brandModels.map(m => m.modelName));
 
